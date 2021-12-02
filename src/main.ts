@@ -17,6 +17,13 @@ ctx.fillStyle = black;
 
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+const canvasDim: Position = {
+    x: 0,
+    y: 0,
+    w: canvas.width,
+    h: canvas.height
+}
+
 const root = document.querySelector("#root");
 
 let debug = true;
@@ -36,15 +43,20 @@ let accumulator = 0;
 
 const maxAccumulator = 10 * step;
 
-const maxFrames = 10;
+const limitFrame = false;
+const maxFrames = 100;
 let currentFrame = 1;
 
 let requestNextFrame = true;
 
 type Ball = {
   pos: Position;
+  vel: Vector
 };
 
+
+const vx0 = 0
+const vy0 = 70;
 const ball: Ball = {
   pos: {
     x: 10,
@@ -52,6 +64,10 @@ const ball: Ball = {
     w: 10,
     h: 10,
   },
+  vel: {
+      x: vx0,
+      y: vy0
+  }
 };
 gameLoop(performance.now());
 
@@ -90,19 +106,66 @@ function gameLoop(time: DOMHighResTimeStamp): void {
 
   lastMillis = time;
 
-  if (currentFrame > maxFrames) requestNextFrame = false;
+  if (currentFrame > maxFrames && limitFrame) requestNextFrame = false;
 
   if (requestNextFrame) requestAnimationFrame(gameLoop);
 }
 
 function update(dt: number): void {
   debugMsg(`update dt = ${dt} s`);
+  updateBall(dt);
+  let ballCollision = collideBorders(ball.pos);
+  if (ballCollision != null) {
+      requestNextFrame = false
+      debugMsg('collision borders', ballCollision)
+  }
+}
+
+function updateBall(dt: number) {
+  ball.pos.x += ball.vel.x * dt
+  ball.pos.y += ball.vel.y * dt
+}
+
+function collideBorders(pos: Position): Side | null {
+    if (pos.x < canvasDim.x) {
+        return Side.LEFT
+    }
+    if (pos.x + pos.w > canvasDim.x + canvasDim.w) {
+        return Side.RIGHT
+    }
+
+    if (pos.y < canvasDim.y) {
+        return Side.TOP
+    }
+
+    if (pos.y + pos.h > canvasDim.y + canvasDim.h) {
+        return Side.BOTTOM;
+    }
+
+    return null;
+}
+
+
+enum Side {
+    LEFT,
+    RIGHT,
+    TOP,
+    BOTTOM
 }
 
 function draw(): void {
   debugMsg("draw frame", currentFrame);
   
+  resetCanvas(ctx)
+  
   drawBall(ctx, ball);
+}
+
+function resetCanvas(ctx: CanvasRenderingContext2D) {
+  ctx.save();
+  ctx.fillStyle = black;
+  drawRect(ctx, canvasDim)
+  ctx.restore();
 }
 
 function drawRect(ctx: CanvasRenderingContext2D, pos: Position) {
@@ -124,6 +187,10 @@ type Position = {
   h: number;
 };
 
+type Vector = {
+    x: number,
+    y: number
+}
 function debugMsg(...params: any[]) {
   if (debug) console.debug(...params);
 }
