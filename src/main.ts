@@ -1,10 +1,25 @@
 const canvas: HTMLCanvasElement = document.createElement("canvas");
-canvas.width = 400;
-canvas.height = 800;
+canvas.width = 600;
+canvas.height = 400;
+
+const ctx: CanvasRenderingContext2D = canvas.getContext(
+  "2d"
+) as CanvasRenderingContext2D;
+
+if (!ctx) {
+  throw new Error("cannot get 2d rendeting context");
+}
+
+const black = "#000";
+const white = "#fff";
+
+ctx.fillStyle = black;
+
+ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 const root = document.querySelector("#root");
 
-const debug = false;
+let debug = true;
 
 root?.appendChild(canvas);
 
@@ -15,11 +30,30 @@ let lastMillis: number;
  */
 const step = 1 / 60;
 
+debugMsg("step", step)
+
 let accumulator = 0;
 
 const maxAccumulator = 10 * step;
 
-gameLoop();
+const maxFrames = 10;
+let currentFrame = 1;
+
+let requestNextFrame = true;
+
+type Ball = {
+  pos: Position;
+};
+
+const ball: Ball = {
+  pos: {
+    x: 10,
+    y: 20,
+    w: 10,
+    h: 10,
+  },
+};
+gameLoop(performance.now());
 
 /**
  * objective: call update with fixed step time for accurate simulation
@@ -34,30 +68,62 @@ gameLoop();
  * maxAccValue = 10 * steps
  * acc = Min(acc, maxAccvalue)
  *
- * @param time
+ * @param time current time relative to time origin
+ * time origin = beginning of the current document's
  */
-function gameLoop(time: DOMHighResTimeStamp = 0): void {
-  // skip first call
+function gameLoop(time: DOMHighResTimeStamp): void {
+  // skip first loops to let time accumulate for one frame
   if (lastMillis) {
     const elapsed = (time - lastMillis) / 1000;
     accumulator += elapsed;
     accumulator = Math.min(accumulator, maxAccumulator);
-    if (debug) console.debug(accumulator);
+    debugMsg("accumulator", accumulator);
     while (accumulator > step) {
       update(step);
       accumulator -= step;
     }
     draw();
+    currentFrame++;
+  } else {
+    debugMsg(`skip\nlast time ${lastMillis}\ntime ${time}`);
   }
 
   lastMillis = time;
-  requestAnimationFrame(gameLoop);
+
+  if (currentFrame > maxFrames) requestNextFrame = false;
+
+  if (requestNextFrame) requestAnimationFrame(gameLoop);
 }
 
 function update(dt: number): void {
-  if (debug) console.debug(`update dt = ${dt} s`);
+  debugMsg(`update dt = ${dt} s`);
 }
 
 function draw(): void {
-  if (debug) console.debug("draw");
+  debugMsg("draw frame", currentFrame);
+  
+  drawBall(ctx, ball);
+}
+
+function drawRect(ctx: CanvasRenderingContext2D, pos: Position) {
+  ctx.fillRect(pos.x, pos.y, pos.w, pos.h);
+}
+
+function drawBall(ctx: CanvasRenderingContext2D, ball: Ball) {
+  debugMsg("ball", ball);
+  ctx.save();
+  ctx.fillStyle = white;
+  drawRect(ctx, ball.pos);
+  ctx.restore();
+}
+
+type Position = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+function debugMsg(...params: any[]) {
+  if (debug) console.debug(...params);
 }
