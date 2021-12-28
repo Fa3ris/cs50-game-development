@@ -25,3 +25,8 @@ export enum Side {
   TOP,
   BOTTOM,
 }
+
+export enum Player {
+  ONE,
+  TWO
+}

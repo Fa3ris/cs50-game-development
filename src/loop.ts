@@ -1,4 +1,4 @@
-import { debug } from "./log";
+import { debug, info } from "./log";
 
 /**
  * CALLBACKS
@@ -73,20 +73,30 @@ function gameLoop(time: DOMHighResTimeStamp): void {
 
   if (currentFrame > maxFrames && limitFrame) requestNextFrame = false;
 
+  debug('next frame', requestNextFrame)
   if (requestNextFrame) requestAnimationFrame(gameLoop);
 }
 
 export function stop() {
   requestNextFrame = false;
+  debug('stop frame', requestNextFrame)
   lastMillis = 0;
   accumulator = 0;
 }
 
 export function resume() {
+  if (requestNextFrame) {
+    info("already looping")
+    return
+  }
   requestNextFrame = true;
   gameLoop(performance.now())
 }
 
 export function start() {
+  if (requestNextFrame) {
+    info("already looping")
+    return
+  }
   gameLoop(performance.now())
 }

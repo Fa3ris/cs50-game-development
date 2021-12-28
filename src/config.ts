@@ -29,5 +29,14 @@ const ballConfig = {
     maxVy : multiplier * ballV0,
 }
 
-export { canvasConfig, ballConfig, debugConfig };
+const padH = 50;
+
+const padConfig = {
+    borderOffset: 20,
+    padW: 10,
+    padH,
+    padStartY: canvasConfig.H / 2 -  padH / 2
+}
+
+export { canvasConfig, ballConfig, debugConfig, padConfig };
 export default canvasConfig

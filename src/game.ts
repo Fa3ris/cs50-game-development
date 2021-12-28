@@ -1,34 +1,83 @@
 import { Ball } from "./ball";
 import ctx, { canvasDim } from "./canvas";
 import { collideBorders, collisionAABBV2 } from "./collision";
-import { canvasConfig, debugConfig } from "./config";
+import { canvasConfig, debugConfig, padConfig } from "./config";
 import { debug } from "./log";
 import { resume, stop } from "./loop";
 import { Pad } from "./pad";
-import { Ball as BallType, Pad as PadType, Position, Side } from "./types";
+import { State } from "./state";
+import {
+    Ball as BallType,
+    Pad as PadType,
+    Player,
+    Position,
+    Side
+} from "./types";
 
 const { W, H } = canvasConfig;
 
 const black = "#000";
 const white = "#fff";
 
-const ball = createBall();
-const pad1 = createPad1();
-const pad2 = createPad2();
+let ball: Ball;
+let pad1: Pad;
+let pad2: Pad;
+let gameState: State = State.START;
 
-const audio = new Audio("pong_sounds_paddle_hit.wav");
+let score1 = 0;
+let score2 = 0;
+
+resetEntities();
+
+const hitSound = new Audio("pong_sounds_paddle_hit.wav");
+const scoreSound = new Audio("pong_sounds_score.wav");
+const wallSound = new Audio("pong_sounds_wall_hit.wav");
+
+const winScore = 1;
 
 export function mouseMove(event: MouseEvent) {
-  pad1.pos.y = event.offsetY;
+  if (gameState == State.PLAY) {
+    pad1.pos.y = event.offsetY;
+  }
 }
 
 export function keyPressed(event: KeyboardEvent) {
   if (event.key === " ") {
-    resume();
+    if (gameState == State.START || gameState == State.SERVE) {
+      gameState = State.PLAY;
+      return;
+    }
+
+    if (gameState == State.END) {
+      score1 = 0;
+      score2 = 0;
+      resume();
+      gameState = State.START;
+      return;
+    }
+
+    if (gameState == State.PLAY) {
+      debug("pause");
+      gameState = State.PAUSED;
+      stop();
+      return;
+    }
+
+    if (gameState == State.PAUSED) {
+      gameState = State.PLAY;
+      resume();
+      return
+    }
   }
 }
 
 export function update(dt: number): void {
+  if (gameState == State.PLAY) {
+    updatePlay(dt);
+  }
+}
+
+function updatePlay(dt: number): void {
   ball.update(dt);
 
   // player pad responds to mouse event
@@ -50,7 +99,7 @@ export function update(dt: number): void {
   const padCollision = ballPad1Collision || ballPad2Collision;
 
   if (padCollision) {
-    audio.play();
+    hitSound.play();
     debug("%cpad collision", "color:red; font-size: 20px", ball);
   }
 
@@ -88,24 +137,109 @@ function updateAfterBorderCollision(ballCollision: Side) {
     case Side.TOP:
       ball.pos.y = 0;
       ball.vel.y *= -Ball.acc;
+      wallSound.play();
       break;
     case Side.BOTTOM:
       ball.pos.y = H - ball.pos.h;
       ball.vel.y *= -Ball.acc;
+      wallSound.play();
       break;
     case Side.RIGHT:
       ball.pos.x = W - ball.pos.w;
       ball.vel.x *= -Ball.acc;
+      scoreSound.play();
+      score(Player.ONE);
       break;
     case Side.LEFT:
       ball.pos.x = 0;
       ball.vel.x *= -Ball.acc;
+      scoreSound.play();
+      score(Player.TWO);
       break;
   }
 }
 
+function score(player: Player) {
+  switch (player) {
+    case Player.ONE:
+      score1++;
+      debug("1 scores", score1);
+      if (score1 >= winScore) {
+        win();
+        return;
+      }
+      twoServing();
+      break;
+    case Player.TWO:
+      score2++;
+      debug("2 scores", score1);
+      if (score2 >= winScore) {
+        win();
+        return;
+      }
+      oneServing();
+      break;
+  }
+
+  gameState = State.SERVE;
+}
+
+function win() {
+  gameState = State.END;
+  resetEntities();
+  stop();
+}
+
+function oneServing() {
+  resetEntities();
+  ball.pos.x = pad1.pos.x + pad1.pos.w;
+
+  const angleOffset = -Math.PI / 3;
+  const angle = angleOffset + (Math.random() * Math.PI) / 3;
+  const v0 = 70;
+  const vx0 = v0 * Math.cos(angle);
+  const vy0 = v0 * Math.sin(angle);
+
+  ball.vel.x = vx0;
+  ball.vel.y = vy0;
+}
+
+function twoServing() {
+  resetEntities();
+
+  ball.pos.x = pad2.pos.x - ball.pos.w;
+
+  const angleOffset = Math.PI - Math.PI / 3;
+  const angle = angleOffset + (Math.random() * Math.PI) / 3;
+  const v0 = 70;
+  const vx0 = v0 * Math.cos(angle);
+  const vy0 = v0 * Math.sin(angle);
+
+  ball.vel.x = vx0;
+  ball.vel.y = vy0;
+}
+
 export function draw(): void {
   resetCanvas(ctx);
+
+  if (gameState == State.END) {
+    drawHelloPongAndScore();
+    debug("score 1", score1);
+    debug("score 2", score2);
+    if (score1 >= winScore) {
+      debug("1 wins");
+      drawWin(1);
+    } else {
+      debug("2 wins");
+      drawWin(2);
+    }
+    return;
+  }
+  if (gameState == State.START) {
+    drawStartScreen();
+    return;
+  }
+
   drawBall(ctx, ball);
   drawPad(ctx, pad1);
   drawPad(ctx, pad2);
@@ -152,9 +286,31 @@ function drawHelloPongAndScore() {
   ctx.restore();
 }
 
+function drawWin(n: number) {
+  ctx.save();
+  const textSize = 40;
+  ctx.font = `${textSize}px VT323`;
+  ctx.fillStyle = white;
+  const hello = `player ${n} wins`;
+  ctx.textAlign = "center";
+  ctx.fillText(hello, W / 2, H / 2 + 50);
+  ctx.restore();
+}
+
+function drawStartScreen() {
+  ctx.save();
+  const textSize = 40;
+  ctx.font = `${textSize}px VT323`;
+  ctx.fillStyle = white;
+  const hello = "Press SPACE to begin";
+  ctx.textAlign = "center";
+  ctx.fillText(hello, W / 2, H / 2);
+  ctx.restore();
+}
+
 function drawScore() {
-  ctx.fillText("" + 0, W / 2 - 80, H / 2);
-  ctx.fillText("" + 214, W / 2 + 80, H / 2);
+  ctx.fillText("" + score1, W / 2 - 80, H / 2);
+  ctx.fillText("" + score2, W / 2 + 80, H / 2);
 }
 
 function drawRect(ctx: CanvasRenderingContext2D, pos: Position) {
@@ -194,33 +350,31 @@ function createBall(): Ball {
 }
 
 function createPad1() {
-  const borderOffset = 20;
-  const padW = 10;
-  const padH = 50;
-  const padStartY = H / 2 - 50 / 2;
   const pad1Init: PadType = {
     pos: {
-      x: borderOffset,
-      y: padStartY,
-      w: padW,
-      h: padH,
+      x: padConfig.borderOffset,
+      y: padConfig.padStartY,
+      w: padConfig.padW,
+      h: padConfig.padH,
     },
   };
   return new Pad(pad1Init);
 }
 
 function createPad2() {
-  const borderOffset = 20;
-  const padW = 10;
-  const padH = 50;
-  const padStartY = H / 2 - 50 / 2;
   const pad2Init: PadType = {
     pos: {
-      x: W - padW - borderOffset,
-      y: padStartY,
-      w: padW,
-      h: padH,
+      x: W - padConfig.padW - padConfig.borderOffset,
+      y: padConfig.padStartY,
+      w: padConfig.padW,
+      h: padConfig.padH,
     },
   };
   return new Pad(pad2Init);
+}
+
+function resetEntities() {
+  ball = createBall();
+  pad1 = createPad1();
+  pad2 = createPad2();
 }
