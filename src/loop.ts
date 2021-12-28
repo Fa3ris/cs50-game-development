@@ -1,4 +1,4 @@
-import { debug } from "./log";
+import { debug, info } from "./log";
 
 
 /**
@@ -59,6 +59,7 @@ function gameLoop(time: DOMHighResTimeStamp): void {
       update(step);
       accumulator -= step;
     }
+    debug("draw frame", currentFrame);
     draw();
     currentFrame++;
   } else {
@@ -69,6 +70,7 @@ function gameLoop(time: DOMHighResTimeStamp): void {
 
   if (currentFrame > maxFrames && limitFrame) requestNextFrame = false;
 
+  info("requestNextFrame", requestNextFrame)
   if (requestNextFrame) requestAnimationFrame(gameLoop);
 }
 

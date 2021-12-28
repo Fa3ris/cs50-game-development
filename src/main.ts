@@ -1,40 +1,24 @@
 const audio = new Audio("pong_sounds_paddle_hit.wav")
 
-const W = 600;
-const H = 300;
+import config from "./config"; 
+import ctx from "./canvas";
+
+import { resume, setDraw, setUpdate, start, stop} from "./loop";
+import { info } from "./log";
+
+
+const {W, H} = config;
 
 let debug = true;
 
 const black = "#000";
 const white = "#fff";
 
-const ratio = window.devicePixelRatio;
 
-debugMsg("ratio", ratio)
+setDraw(draw)
+setUpdate(update);
+start();
 
-const canvas: HTMLCanvasElement = document.createElement("canvas");
-
-canvas.width = W * ratio;
-canvas.height = H * ratio;
-canvas.style.width = W + "px";
-canvas.style.height = H + "px";
-
-
-const ctx: CanvasRenderingContext2D = canvas.getContext(
-  "2d"
-) as CanvasRenderingContext2D;
-
-if (!ctx) {
-  throw new Error("cannot get 2d rendeting context");
-}
-
-
-ctx.scale(ratio, ratio);
-
-
-ctx.fillStyle = black;
-
-ctx.fillRect(0, 0, W, H);
 
 const canvasDim: Position = {
   x: 0,
@@ -45,28 +29,9 @@ const canvasDim: Position = {
 
 const root = document.querySelector("#root");
 
-
-
+const canvas = ctx.canvas;
 root?.appendChild(canvas);
 
-let lastMillis: number;
-
-/**
- * one step time of an update in seconds
- */
-const step = 1 / 60;
-
-debugMsg("step", step);
-
-let accumulator = 0;
-
-const maxAccumulator = 10 * step;
-
-const limitFrame = false;
-const maxFrames = 100;
-let currentFrame = 1;
-
-let requestNextFrame = true;
 
 type Ball = {
   pos: Position;
@@ -117,7 +82,6 @@ const pad2: Pad = {
   },
 };
 
-gameLoop(performance.now());
 
 canvas.addEventListener("mousemove", (event) => {
   pad1.pos.y = event.offsetY;
@@ -126,51 +90,10 @@ canvas.addEventListener("mousemove", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === " ") {
     stopOnCollision = false;
-    requestNextFrame = true;
-    lastMillis = 0;
-    requestAnimationFrame(gameLoop);
+    resume()
   }
 });
 
-/**
- * objective: call update with fixed step time for accurate simulation
- * accumulate sort of 'time debt' to simulate
- *
- * when finished simulating we draw once
- *
- * avoid big step times for example when user change tab
- *
- *
- * idea: cap the accumulator ?
- * maxAccValue = 10 * steps
- * acc = Min(acc, maxAccvalue)
- *
- * @param time current time relative to time origin
- * time origin = beginning of the current document's
- */
-function gameLoop(time: DOMHighResTimeStamp): void {
-  // skip first loops to let time accumulate for one frame
-  if (lastMillis) {
-    const elapsed = (time - lastMillis) / 1000;
-    accumulator += elapsed;
-    accumulator = Math.min(accumulator, maxAccumulator);
-    debugMsg("accumulator", accumulator);
-    while (accumulator > step) {
-      update(step);
-      accumulator -= step;
-    }
-    draw();
-    currentFrame++;
-  } else {
-    debugMsg(`skip\nlast time ${lastMillis}\ntime ${time}`);
-  }
-
-  lastMillis = time;
-
-  if (currentFrame > maxFrames && limitFrame) requestNextFrame = false;
-
-  if (requestNextFrame) requestAnimationFrame(gameLoop);
-}
 
 const acc = 1.75;
 const maxVx = 3 * v0,
@@ -223,8 +146,8 @@ function update(dt: number): void {
   pad2.pos.y = ball.pos.y;
 
   if (stopOnCollision) {
-    requestNextFrame = false;
     debugMsg("collision borders", ballCollision);
+    stop();
   }
 }
 
@@ -319,7 +242,6 @@ enum Side {
 }
 
 function draw(): void {
-  debugMsg("draw frame", currentFrame);
 
   resetCanvas(ctx);
 
