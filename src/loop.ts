@@ -1,12 +1,17 @@
-import { debug, info } from "./log";
-
+import { debug } from "./log";
 
 /**
  * CALLBACKS
  */
 let update: (dt: number) => void;
+export function setUpdate(callback: (dt: number) => void) {
+  update = callback;
+}
 
 let draw: () => void;
+export function setDraw(callback: () => void) {
+  draw = callback;
+}
 
 
 /**
@@ -27,9 +32,7 @@ const maxFrames = 100;
  */
 let lastMillis: number;
 let accumulator = 0;
-
 let currentFrame = 1;
-
 let requestNextFrame = true;
 
 /**
@@ -70,16 +73,7 @@ function gameLoop(time: DOMHighResTimeStamp): void {
 
   if (currentFrame > maxFrames && limitFrame) requestNextFrame = false;
 
-  info("requestNextFrame", requestNextFrame)
   if (requestNextFrame) requestAnimationFrame(gameLoop);
-}
-
-export function setUpdate(callback: (dt: number) => void) {
-  update = callback;
-}
-
-export function setDraw(callback: () => void) {
-  draw = callback;
 }
 
 export function stop() {
