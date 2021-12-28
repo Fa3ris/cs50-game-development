@@ -1,3 +1,5 @@
+const audio = new Audio("pong_sounds_paddle_hit.wav")
+
 const W = 600;
 const H = 300;
 
@@ -202,6 +204,7 @@ function update(dt: number): void {
   const ballPad2Collision = collisionAABBV2(ball.pos, pad2.pos);
 
   if (ballPad1Collision || ballPad2Collision) {
+    audio.play();
     ball.vel.x *= -acc;
     console.log("%cpad1 collision", "color:red; font-size: 20px", ball);
     stopOnCollision = true;
