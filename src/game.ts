@@ -1,13 +1,13 @@
 import { Ball } from "./ball";
 import ctx, { canvasDim } from "./canvas";
 import { collideBorders, collisionAABBV2 } from "./collision";
-import config, { debugConfig } from "./config";
-import { debug, info } from "./log";
+import { canvasConfig, debugConfig } from "./config";
+import { debug } from "./log";
 import { resume, stop } from "./loop";
 import { Pad } from "./pad";
 import { Ball as BallType, Pad as PadType, Position, Side } from "./types";
 
-const { W, H } = config;
+const { W, H } = canvasConfig;
 
 const black = "#000";
 const white = "#fff";
@@ -39,7 +39,7 @@ export function update(dt: number): void {
   const borderCollision = collideBorders(ball.pos);
 
   if (borderCollision != null) {
-    info("collision border", borderCollision);
+    debug("collision border", borderCollision);
     updateAfterBorderCollision(borderCollision);
   }
 
@@ -51,7 +51,7 @@ export function update(dt: number): void {
 
   if (padCollision) {
     audio.play();
-    info("%cpad collision", "color:red; font-size: 20px", ball);
+    debug("%cpad collision", "color:red; font-size: 20px", ball);
   }
 
   if (ballPad1Collision) {
@@ -90,11 +90,11 @@ function updateAfterBorderCollision(ballCollision: Side) {
       ball.vel.y *= -Ball.acc;
       break;
     case Side.BOTTOM:
-      ball.pos.y = config.H - ball.pos.h;
+      ball.pos.y = H - ball.pos.h;
       ball.vel.y *= -Ball.acc;
       break;
     case Side.RIGHT:
-      ball.pos.x = config.W - ball.pos.w;
+      ball.pos.x = W - ball.pos.w;
       ball.vel.x *= -Ball.acc;
       break;
     case Side.LEFT:
