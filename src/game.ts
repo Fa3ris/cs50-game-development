@@ -1,12 +1,11 @@
 import { Ball } from "./ball";
-import config from "./config";
+import ctx, { canvasDim } from "./canvas";
+import { collideBorders, collisionAABBV2 } from "./collision";
+import config, { debugConfig } from "./config";
+import { debug, info } from "./log";
+import { resume, stop } from "./loop";
 import { Pad } from "./pad";
 import { Ball as BallType, Pad as PadType, Position, Side } from "./types";
-import ctx from "./canvas";
-import { debug, info } from "./log";
-import { canvasDim } from "./canvas";
-import { collideBorders, collisionAABBV2 } from "./collision";
-import { stop, resume } from "./loop";
 
 const { W, H } = config;
 
@@ -17,13 +16,6 @@ const ball = createBall();
 const pad1 = createPad1();
 const pad2 = createPad2();
 
-const v0 = 70;
-const acc = 1.75;
-const maxVx = 3 * v0,
-  maxVy = 3 * v0;
-
-let stopOnCollision = false;
-
 const audio = new Audio("pong_sounds_paddle_hit.wav");
 
 export function mouseMove(event: MouseEvent) {
@@ -32,67 +24,84 @@ export function mouseMove(event: MouseEvent) {
 
 export function keyPressed(event: KeyboardEvent) {
   if (event.key === " ") {
-    stopOnCollision = false;
     resume();
   }
 }
 
 export function update(dt: number): void {
-  updateBall(dt);
+  ball.update(dt);
 
-  const ballCollision = collideBorders(ball.pos);
+  // player pad responds to mouse event
 
-  switch (ballCollision) {
-    case Side.TOP:
-      ball.pos.y = 0;
-      ball.vel.y *= -acc;
-      break;
-    case Side.BOTTOM:
-      ball.pos.y = H - ball.pos.h;
-      ball.vel.y *= -acc;
-      break;
-    case Side.RIGHT:
-      ball.pos.x = W - ball.pos.w;
-      ball.vel.x *= -acc;
-      break;
-    case Side.LEFT:
-      ball.pos.x = 0;
-      ball.vel.x *= -acc;
-      break;
+  // AI pad follows ball strictly
+  pad2.pos.y = ball.pos.y;
+
+  const borderCollision = collideBorders(ball.pos);
+
+  if (borderCollision != null) {
+    info("collision border", borderCollision);
+    updateAfterBorderCollision(borderCollision);
   }
 
   const ballPad1Collision = collisionAABBV2(ball.pos, pad1.pos);
 
   const ballPad2Collision = collisionAABBV2(ball.pos, pad2.pos);
 
-  if (ballPad1Collision || ballPad2Collision) {
+  const padCollision = ballPad1Collision || ballPad2Collision;
+
+  if (padCollision) {
     audio.play();
-    ball.vel.x *= -acc;
     info("%cpad collision", "color:red; font-size: 20px", ball);
-    stopOnCollision = true;
   }
+
   if (ballPad1Collision) {
-    ball.pos.x = pad1.pos.x + pad1.pos.w - 1;
+    updateAfterPad1Collision();
   }
 
   if (ballPad2Collision) {
-    ball.pos.x = pad2.pos.x - ball.pos.w + 1;
+    updateAfterPad2Collision();
   }
 
-  ball.vel.x = Math.min(ball.vel.x, maxVx);
-  ball.vel.y = Math.min(ball.vel.y, maxVy);
+  ball.adjustVelocity();
 
-  pad2.pos.y = ball.pos.y;
-
-  if (stopOnCollision) {
-    debug("collision borders", ballCollision);
+  if (padCollision && debugConfig.stopOnCollision) {
     stop();
   }
 }
 
-function updateBall(dt: number) {
-  ball.pos.x += ball.vel.x * dt;
-  ball.pos.y += ball.vel.y * dt;
+/**
+ * UPDATE AFTER COLLISION
+ */
+
+function updateAfterPad1Collision() {
+  ball.vel.x *= -Ball.acc;
+  ball.pos.x = pad1.pos.x + pad1.pos.w - 1;
+}
+
+function updateAfterPad2Collision() {
+  ball.vel.x *= -Ball.acc;
+  ball.pos.x = pad2.pos.x - ball.pos.w + 1;
+}
+
+function updateAfterBorderCollision(ballCollision: Side) {
+  switch (ballCollision) {
+    case Side.TOP:
+      ball.pos.y = 0;
+      ball.vel.y *= -Ball.acc;
+      break;
+    case Side.BOTTOM:
+      ball.pos.y = config.H - ball.pos.h;
+      ball.vel.y *= -Ball.acc;
+      break;
+    case Side.RIGHT:
+      ball.pos.x = config.W - ball.pos.w;
+      ball.vel.x *= -Ball.acc;
+      break;
+    case Side.LEFT:
+      ball.pos.x = 0;
+      ball.vel.x *= -Ball.acc;
+      break;
+  }
 }
 
 export function draw(): void {
@@ -100,8 +109,13 @@ export function draw(): void {
   drawBall(ctx, ball);
   drawPad(ctx, pad1);
   drawPad(ctx, pad2);
-  drawHelloPong();
+  drawHelloPongAndScore();
 }
+
+/**
+ * DRAW FUNCTIONS
+ *
+ */
 
 function resetCanvas(ctx: CanvasRenderingContext2D) {
   ctx.save();
@@ -126,7 +140,7 @@ function drawPad(ctx: CanvasRenderingContext2D, pad: Pad) {
   ctx.restore();
 }
 
-function drawHelloPong() {
+function drawHelloPongAndScore() {
   ctx.save();
   const textSize = 40;
   ctx.font = `${textSize}px VT323`;
@@ -134,19 +148,23 @@ function drawHelloPong() {
   const hello = "Hello, Pong!";
   ctx.textAlign = "center";
   ctx.fillText(hello, W / 2, 50);
-  ctx.fillText("" + 0, W / 2 - 80, H / 2);
-  ctx.fillText("" + 213, W / 2 + 80, H / 2);
+  drawScore();
   ctx.restore();
 }
 
-/**
- * UTILS
- * @param ctx
- * @param pos
- */
+function drawScore() {
+  ctx.fillText("" + 0, W / 2 - 80, H / 2);
+  ctx.fillText("" + 214, W / 2 + 80, H / 2);
+}
+
 function drawRect(ctx: CanvasRenderingContext2D, pos: Position) {
   ctx.fillRect(pos.x, pos.y, pos.w, pos.h);
 }
+
+/**
+ * FACTORIES
+ *
+ */
 
 function createBall(): Ball {
   const angleOffset = Math.random() > 0.5 ? 0 : Math.PI;

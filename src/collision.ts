@@ -1,5 +1,5 @@
-import { Position, Side } from "./types";
 import { canvasDim } from "./canvas";
+import { Position, Side } from "./types";
 
 /**
  * Si la box2 est
@@ -43,14 +43,13 @@ function collisionAABB(box1: Position, box2: Position) {
  * @returns
  */
 export function collisionAABBV2(box1: Position, box2: Position) {
-    const collisionDetected = box1.x < box2.x + box2.w &&
-                              box1.x + box1.w > box2.x &&
-                              box1.y < box2.y + box2.h &&
-                              box1.h + box1.y > box2.y;
-    return collisionDetected;
+  const collisionDetected =
+    box1.x < box2.x + box2.w &&
+    box1.x + box1.w > box2.x &&
+    box1.y < box2.y + box2.h &&
+    box1.h + box1.y > box2.y;
+  return collisionDetected;
 }
-
-
 
 export function collideBorders(pos: Position): Side | null {
   if (pos.x < canvasDim.x) {
