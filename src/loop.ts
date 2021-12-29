@@ -83,21 +83,6 @@ function gameLoop(time: DOMHighResTimeStamp): void {
   if (requestNextFrame) requestAnimationFrame(gameLoop);
 }
 
-// export function stop() {
-//   requestNextFrame = false;
-//   debug('stop frame', requestNextFrame)
-//   lastMillis = 0;
-//   accumulator = 0;
-// }
-
-// export function resume() {
-//   if (requestNextFrame == true) {
-//     info("already looping", requestNextFrame)
-//     return
-//   }
-//   start()
-// }
-
 export function start() {
   requestNextFrame = true;
   gameLoop(performance.now())
