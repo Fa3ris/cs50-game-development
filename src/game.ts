@@ -146,8 +146,6 @@ function updatePlay(dt: number): void {
     updateAfterPad2Collision(dt);
   }
 
-  ball.adjustVelocity();
-
   if (padCollision && debugConfig.stopOnCollision) {
     gameState = State.PAUSED
   }
@@ -172,11 +170,34 @@ function restrictPad(pad: Pad) {
 function updateAfterPad1Collision(dt: number) {
   debug("pad1 collision before", JSON.stringify(ball), JSON.stringify(pad1))
   ball.pos.x = pad1.pos.x + pad1.pos.w;
-  ball.applyForce(ballImpulsion(ball, pad1, dt))
+  ball.applyForce(ballImpulsion(ball, pad1, dt));
+  ball.applyForce(liftEffect(ball, pad1, dt))
   debug("pad1 collision after", JSON.stringify(ball), JSON.stringify(pad1))
 }
 
+
+function liftEffect(ball: Ball, pad: Pad, dt: number) {
+  const impulse = 1000 + Math.random() * 50;
+  const padMidLength = (pad.pos.h / 2)
+  const midPadPoint = (pad.pos.y + padMidLength);
+  let lift = (impulse * Math.abs(midPadPoint - ball.pos.y)) / padMidLength
+
+  if (ball.pos.y < midPadPoint) { lift *= -1 }
+
+  const force = {
+    x: 0,
+    y: lift
+  }
+
+  debug("lift", force)
+  return force
+
+}
+
 /**
+ * 
+ * rebound on pad
+ * 
    F dt = m*dp => F = m*dp / dt
    ou impulsion ? I = delta(p)
    avant impulsion vy
@@ -194,6 +215,12 @@ function ballImpulsion(ball: Ball, pad: Pad, dt: number) {
     }
 }
 
+/**
+ * rebound on wall
+ * @param ball 
+ * @param dt 
+ * @returns 
+ */
 function ballRebound(ball: Ball, dt: number) {
     return {
         y: Math.sign(ball.vel.y) * -2 * Math.abs(ball.vel.y) / dt,
@@ -205,6 +232,7 @@ function updateAfterPad2Collision(dt: number) {
   debug("pad2 collision before", JSON.stringify(ball), JSON.stringify(pad2))
   ball.pos.x = pad2.pos.x - ball.pos.w;
   ball.applyForce(ballImpulsion(ball, pad2, dt))
+  ball.applyForce(liftEffect(ball, pad2, dt))
   debug("pad2 collision after", JSON.stringify(ball), JSON.stringify(pad2))
 }
 

@@ -25,6 +25,8 @@ export class Ball implements BallType {
     this.vel.x += this.accel.x * dt;
     this.vel.y += this.accel.y * dt
 
+    this.adjustVelocity()
+
     this.pos.x += this.vel.x * dt;
     this.pos.y += this.vel.y * dt;
 
@@ -35,7 +37,7 @@ export class Ball implements BallType {
     this.accel.y = 0;
   }
 
-  adjustVelocity() {
+  private adjustVelocity() {
     this.vel.x = Math.sign(this.vel.x) * Math.min(Math.abs(this.vel.x), Ball.maxVx);
     this.vel.y = Math.sign(this.vel.y) * Math.min(Math.abs(this.vel.y), Ball.maxVy);
   }
