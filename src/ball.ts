@@ -36,8 +36,8 @@ export class Ball implements BallType {
   }
 
   adjustVelocity() {
-    this.vel.x = Math.min(this.vel.x, Ball.maxVx);
-    this.vel.y = Math.min(this.vel.y, Ball.maxVy);
+    // this.vel.x = Math.min(this.vel.x, Ball.maxVx);
+    // this.vel.y = Math.min(this.vel.y, Ball.maxVy);
   }
 
   reboundVertical(accel?: Vector) {
@@ -60,6 +60,6 @@ export class Ball implements BallType {
     if (!accel) return
 
     this.accel.x += accel.x;
-    this.accel.y += accel.y;
+    this.vel.y *= accel.y;
   }
 }

@@ -142,14 +142,15 @@ function restrictPad(pad: Pad) {
 function updateAfterPad1Collision() {
   info("pad1 collision before", JSON.stringify(ball), JSON.stringify(pad1))
   ball.pos.x = pad1.pos.x + pad1.pos.w;
-  ball.reboundHorizontal({x: 0, y: (Math.random() > .75 ? 1: -1) * Ball.acc})
+  // (Math.random() > .5 ? 1: -1)
+  ball.reboundHorizontal({x: Ball.acc, y: (Math.random() > .75 ? 1: -1)})
   info("pad1 collision after", JSON.stringify(ball), JSON.stringify(pad1))
 }
 
 function updateAfterPad2Collision() {
   info("pad2 collision before", JSON.stringify(ball), JSON.stringify(pad2))
   ball.pos.x = pad2.pos.x - ball.pos.w;
-  ball.reboundHorizontal({x: 0, y: (Math.random() > .25 ? 1: -1) * Ball.acc})
+  ball.reboundHorizontal({x: -Ball.acc, y: (Math.random() > .75 ? 1: -1)})
   info("pad2 collision after", JSON.stringify(ball), JSON.stringify(pad2))
 }
 
@@ -215,9 +216,8 @@ function oneServing() {
 
   const angleOffset = -Math.PI / 3;
   const angle = angleOffset + (Math.random() * Math.PI) / 3;
-  const v0 = 70;
-  const vx0 = v0 * Math.cos(angle);
-  const vy0 = v0 * Math.sin(angle);
+  const vx0 = Ball.v0 * Math.cos(angle);
+  const vy0 = Ball.v0 * Math.sin(angle);
 
   ball.vel.x = vx0;
   ball.vel.y = vy0;
@@ -231,9 +231,8 @@ function twoServing() {
 
   const angleOffset = Math.PI - Math.PI / 3;
   const angle = angleOffset + (Math.random() * Math.PI) / 3;
-  const v0 = 70;
-  const vx0 = v0 * Math.cos(angle);
-  const vy0 = v0 * Math.sin(angle);
+  const vx0 = Ball.v0 * Math.cos(angle);
+  const vy0 = Ball.v0 * Math.sin(angle);
 
   ball.vel.x = vx0;
   ball.vel.y = vy0;
@@ -371,9 +370,15 @@ function drawRect(ctx: CanvasRenderingContext2D, pos: Position) {
 function createBall(): Ball {
   const angleOffset = Math.random() > 0.5 ? 0 : Math.PI;
   const angle = angleOffset + (Math.random() * Math.PI) / 3;
-  const v0 = 70;
-  const vx0 = v0 * Math.cos(angle);
-  const vy0 = v0 * Math.sin(angle);
+  let vx0 = Ball.v0 * Math.cos(angle);
+  let vy0 = Ball.v0 * Math.sin(angle);
+
+
+//   const magnitude = Math.sqrt(Math.pow(vx0, 2) + Math.pow(vy0, 2));
+
+//   vx0 *= (v0 / magnitude) 
+//   vy0 *= (v0 / magnitude) 
+
 
   const ballSide = 10;
   const x0 = W / 2 - ballSide / 2;
@@ -392,6 +397,7 @@ function createBall(): Ball {
     },
   };
 
+  info("ball init", ballInit)
   return new Ball(ballInit);
 }
 
