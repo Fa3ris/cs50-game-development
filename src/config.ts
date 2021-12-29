@@ -18,9 +18,9 @@ const debugConfig = {
     stopOnCollision: false,
 }
 
-const ballV0 = 70;
-const multiplier = 3;
-const acceleration = 1.75;
+const ballV0 = 200;
+const multiplier = 5;
+const acceleration = 10;
 
 const ballConfig = {
     v0 : ballV0,

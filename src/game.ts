@@ -2,7 +2,7 @@ import { Ball } from "./ball";
 import ctx, { canvasDim } from "./canvas";
 import { collideBorders, collisionAABBV2 } from "./collision";
 import { canvasConfig, debugConfig, padConfig } from "./config";
-import { debug } from "./log";
+import { debug, info } from "./log";
 import { resume, stop } from "./loop";
 import { Pad } from "./pad";
 import { State } from "./state";
@@ -140,36 +140,36 @@ function restrictPad(pad: Pad) {
  */
 
 function updateAfterPad1Collision() {
-  ball.vel.x *= -Ball.acc;
-  ball.pos.x = pad1.pos.x + pad1.pos.w - 1;
+  info("pad1 collision before", JSON.stringify(ball), JSON.stringify(pad1))
+  ball.pos.x = pad1.pos.x + pad1.pos.w;
+  ball.reboundHorizontal({x: 0, y: (Math.random() > .75 ? 1: -1) * Ball.acc})
+  info("pad1 collision after", JSON.stringify(ball), JSON.stringify(pad1))
 }
 
 function updateAfterPad2Collision() {
-  ball.vel.x *= -Ball.acc;
-  ball.pos.x = pad2.pos.x - ball.pos.w + 1;
+  info("pad2 collision before", JSON.stringify(ball), JSON.stringify(pad2))
+  ball.pos.x = pad2.pos.x - ball.pos.w;
+  ball.reboundHorizontal({x: 0, y: (Math.random() > .25 ? 1: -1) * Ball.acc})
+  info("pad2 collision after", JSON.stringify(ball), JSON.stringify(pad2))
 }
 
 function updateAfterBorderCollision(ballCollision: Side) {
   switch (ballCollision) {
     case Side.TOP:
       ball.pos.y = courtThickness;
-      ball.vel.y *= -Ball.acc;
+      ball.reboundVertical()
       wallSound.play();
       break;
     case Side.BOTTOM:
       ball.pos.y = H - courtThickness - ball.pos.h;
-      ball.vel.y *= -Ball.acc;
+      ball.reboundVertical()
       wallSound.play();
       break;
     case Side.RIGHT:
-      ball.pos.x = W - ball.pos.w;
-      ball.vel.x *= -Ball.acc;
       scoreSound.play();
       score(Player.ONE);
       break;
     case Side.LEFT:
-      ball.pos.x = 0;
-      ball.vel.x *= -Ball.acc;
       scoreSound.play();
       score(Player.TWO);
       break;
@@ -209,7 +209,7 @@ function win() {
 
 function oneServing() {
   resetEntities();
-  
+
   // stick ball to pad but cause to detect collision
   ball.pos.x = pad1.pos.x + pad1.pos.w - 1;
 

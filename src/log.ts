@@ -1,4 +1,4 @@
-const isDebugEnabled = false;
+const isDebugEnabled = true;
 
 export function debug(...params: any[]) {
     if (isDebugEnabled) console.debug(...params);
@@ -7,6 +7,3 @@ export function debug(...params: any[]) {
 export function info(...params: any[]) {
     console.log(...params);
 }
-
-
-
