@@ -124,7 +124,7 @@ function updatePlay(dt: number): void {
 
   if (borderCollision != null) {
     debug("collision border", borderCollision);
-    updateAfterBorderCollision(borderCollision);
+    updateAfterBorderCollision(borderCollision, dt);
   }
 
   const ballPad1Collision = collisionAABBV2(ball.pos, pad1.pos);
@@ -139,11 +139,11 @@ function updatePlay(dt: number): void {
   }
 
   if (ballPad1Collision) {
-    updateAfterPad1Collision();
+    updateAfterPad1Collision(dt);
   }
 
   if (ballPad2Collision) {
-    updateAfterPad2Collision();
+    updateAfterPad2Collision(dt);
   }
 
   ball.adjustVelocity();
@@ -169,31 +169,55 @@ function restrictPad(pad: Pad) {
  * UPDATE AFTER COLLISION
  */
 
-function updateAfterPad1Collision() {
+function updateAfterPad1Collision(dt: number) {
   debug("pad1 collision before", JSON.stringify(ball), JSON.stringify(pad1))
   ball.pos.x = pad1.pos.x + pad1.pos.w;
-  // (Math.random() > .5 ? 1: -1)
-  ball.reboundHorizontal({x: Ball.acc, y: (Math.random() > .75 ? 1: -1)})
+  ball.applyForce(ballImpulsion(ball, pad1, dt))
   debug("pad1 collision after", JSON.stringify(ball), JSON.stringify(pad1))
 }
 
-function updateAfterPad2Collision() {
+/**
+   F dt = m*dp => F = m*dp / dt
+   ou impulsion ? I = delta(p)
+   avant impulsion vy
+   apres impulsion -vy
+   dp = vy - (-vy) = 2*vy
+ * @param ball 
+ * @param pad 
+ * @param dt 
+ * @returns 
+ */
+function ballImpulsion(ball: Ball, pad: Pad, dt: number) {
+    return {
+        x: Math.sign(ball.vel.x) * -2 * Math.abs(ball.vel.x) / dt,
+        y: 0
+    }
+}
+
+function ballRebound(ball: Ball, dt: number) {
+    return {
+        y: Math.sign(ball.vel.y) * -2 * Math.abs(ball.vel.y) / dt,
+        x: 0
+    }
+}
+
+function updateAfterPad2Collision(dt: number) {
   debug("pad2 collision before", JSON.stringify(ball), JSON.stringify(pad2))
   ball.pos.x = pad2.pos.x - ball.pos.w;
-  ball.reboundHorizontal({x: -Ball.acc, y: (Math.random() > .75 ? 1: -1)})
+  ball.applyForce(ballImpulsion(ball, pad2, dt))
   debug("pad2 collision after", JSON.stringify(ball), JSON.stringify(pad2))
 }
 
-function updateAfterBorderCollision(ballCollision: Side) {
+function updateAfterBorderCollision(ballCollision: Side, dt: number) {
   switch (ballCollision) {
     case Side.TOP:
       ball.pos.y = courtThickness;
-      ball.reboundVertical()
+      ball.applyForce(ballRebound(ball, dt))
       wallSound.play();
       break;
     case Side.BOTTOM:
       ball.pos.y = H - courtThickness - ball.pos.h;
-      ball.reboundVertical()
+      ball.applyForce(ballRebound(ball, dt))
       wallSound.play();
       break;
     case Side.RIGHT:

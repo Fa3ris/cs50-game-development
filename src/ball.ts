@@ -40,27 +40,8 @@ export class Ball implements BallType {
     this.vel.y = Math.sign(this.vel.y) * Math.min(Math.abs(this.vel.y), Ball.maxVy);
   }
 
-  reboundVertical(accel?: Vector) {
-    debug('rebound vertical before', accel, JSON.stringify(this))
-    this.vel.y *= -1;
-
-    debug('rebound vertical after', accel, JSON.stringify(this))
-    if (!accel) return
-
-    debug('update accel')
+  applyForce(accel: Vector) {
     this.accel.x += accel.x;
-    this.accel.y += accel.y;
-  }
-
-  reboundHorizontal(accel?: Vector) {
-    debug('rebound horizontal before', accel, JSON.stringify(this))
-
-    this.vel.x *= -1; // reverse direction
-
-    debug('rebound horizontal after', accel, JSON.stringify(this))
-    if (!accel) return
-
-    this.accel.x += accel.x;
-    this.vel.y *= accel.y;
+    this.accel.y += accel.y
   }
 }
