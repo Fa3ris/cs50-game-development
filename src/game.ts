@@ -135,12 +135,12 @@ function updateAfterPad2Collision() {
 function updateAfterBorderCollision(ballCollision: Side) {
   switch (ballCollision) {
     case Side.TOP:
-      ball.pos.y = 0;
+      ball.pos.y = 0 + 20;
       ball.vel.y *= -Ball.acc;
       wallSound.play();
       break;
     case Side.BOTTOM:
-      ball.pos.y = H - ball.pos.h;
+      ball.pos.y = H - 20 - ball.pos.h;
       ball.vel.y *= -Ball.acc;
       wallSound.play();
       break;
@@ -249,11 +249,6 @@ export function draw(): void {
 
 
 function drawCourt(ctx: CanvasRenderingContext2D) {
-    ctx.save();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "red";
-    ctx.restore()
-
     const thickness = 20;
     ctx.save();
     ctx.fillStyle = white;

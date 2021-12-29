@@ -59,11 +59,11 @@ export function collideBorders(pos: Position): Side | null {
     return Side.RIGHT;
   }
 
-  if (pos.y < canvasDim.y) {
+  if (pos.y < canvasDim.y + 20) {
     return Side.TOP;
   }
 
-  if (pos.y + pos.h > canvasDim.y + canvasDim.h) {
+  if (pos.y + pos.h > canvasDim.y + canvasDim.h - 20) {
     return Side.BOTTOM;
   }
 
