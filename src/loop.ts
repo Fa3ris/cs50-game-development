@@ -33,7 +33,7 @@ const maxFrames = 100;
 let lastMillis: number;
 let accumulator = 0;
 let currentFrame = 1;
-let requestNextFrame = true;
+let requestNextFrame: boolean;
 
 /**
  * objective: call update with fixed step time for accurate simulation
@@ -85,18 +85,14 @@ export function stop() {
 }
 
 export function resume() {
-  if (requestNextFrame) {
-    info("already looping")
+  if (requestNextFrame == true) {
+    info("already looping", requestNextFrame)
     return
   }
-  requestNextFrame = true;
-  gameLoop(performance.now())
+  start()
 }
 
 export function start() {
-  if (requestNextFrame) {
-    info("already looping")
-    return
-  }
+  requestNextFrame = true;
   gameLoop(performance.now())
 }
