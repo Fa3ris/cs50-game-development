@@ -223,7 +223,7 @@ export function draw(): void {
   resetCanvas(ctx);
 
   if (gameState == State.END) {
-    drawHelloPongAndScore(ctx);
+    drawScore(ctx);
     debug("score 1", score1);
     debug("score 2", score2);
     if (score1 >= winScore) {
@@ -243,7 +243,7 @@ export function draw(): void {
   drawBall(ctx, ball);
   drawPad(ctx, pad1);
   drawPad(ctx, pad2);
-  drawHelloPongAndScore(ctx);
+  drawScore(ctx);
   drawCourt(ctx)
 }
 
@@ -306,15 +306,13 @@ function drawPad(ctx: CanvasRenderingContext2D, pad: Pad) {
   ctx.restore();
 }
 
-function drawHelloPongAndScore(ctx: CanvasRenderingContext2D) {
+function drawScore(ctx: CanvasRenderingContext2D) {
   ctx.save();
-  const textSize = 40;
-  ctx.font = `${textSize}px VT323`;
+  ctx.font = `40px VT323`;
   ctx.fillStyle = white;
-  const hello = "Hello, Pong!";
   ctx.textAlign = "center";
-  ctx.fillText(hello, W / 2, 50);
-  drawScore();
+  ctx.fillText("" + score1, W / 2 - 80, H / 2);
+  ctx.fillText("" + score2, W / 2 + 80, H / 2);
   ctx.restore();
 }
 
@@ -340,10 +338,7 @@ function drawStartScreen() {
   ctx.restore();
 }
 
-function drawScore() {
-  ctx.fillText("" + score1, W / 2 - 80, H / 2);
-  ctx.fillText("" + score2, W / 2 + 80, H / 2);
-}
+
 
 function drawRect(ctx: CanvasRenderingContext2D, pos: Position) {
   ctx.fillRect(pos.x, pos.y, pos.w, pos.h);
