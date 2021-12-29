@@ -1,5 +1,5 @@
 {
-  "name": "pong-js",
+  "name": "cs50-game-dev",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -7,14 +7,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "parcel"
+    "start": "parcel",
+    "start-flappy": "parcel projects/flappy-bird/index.html --dist-dir dist/flappy",
+    "start-pong": "cp -R projects/pong/static dist/pong && parcel projects/pong/index.html --dist-dir dist/pong"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "parcel": "^2.0.1",
-    "parcel-plugin-static-files-copy": "^2.6.0",
-    "parcel-reporter-static-files-copy": "^1.3.4"
+    "parcel": "^2.0.1"
   }
 }
