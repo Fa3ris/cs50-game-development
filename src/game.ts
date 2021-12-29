@@ -223,7 +223,7 @@ export function draw(): void {
   resetCanvas(ctx);
 
   if (gameState == State.END) {
-    drawHelloPongAndScore();
+    drawHelloPongAndScore(ctx);
     debug("score 1", score1);
     debug("score 2", score2);
     if (score1 >= winScore) {
@@ -243,7 +243,44 @@ export function draw(): void {
   drawBall(ctx, ball);
   drawPad(ctx, pad1);
   drawPad(ctx, pad2);
-  drawHelloPongAndScore();
+  drawHelloPongAndScore(ctx);
+  drawCourt(ctx)
+}
+
+
+function drawCourt(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "red";
+    ctx.restore()
+
+    const thickness = 20;
+    ctx.save();
+    ctx.fillStyle = white;
+    drawRect(ctx, {
+        x: 0,
+        y: 0,
+        w: W,
+        h: thickness
+    });
+    drawRect(ctx, {
+        x: 0,
+        y: H - thickness,
+        w: W,
+        h: thickness
+    });
+
+    ctx.translate(W/2, 0);
+
+    ctx.lineWidth = thickness;
+    ctx.strokeStyle = white;
+    ctx.beginPath();
+    ctx.setLineDash([thickness, 15]);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, H);
+    ctx.stroke();
+
+    ctx.restore();
 }
 
 /**
@@ -274,7 +311,7 @@ function drawPad(ctx: CanvasRenderingContext2D, pad: Pad) {
   ctx.restore();
 }
 
-function drawHelloPongAndScore() {
+function drawHelloPongAndScore(ctx: CanvasRenderingContext2D) {
   ctx.save();
   const textSize = 40;
   ctx.font = `${textSize}px VT323`;
