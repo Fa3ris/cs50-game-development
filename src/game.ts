@@ -18,6 +18,8 @@ const { W, H } = canvasConfig;
 
 const black = "#000";
 const white = "#fff";
+const courtThickness = 20;
+const winScore = 2;
 
 let ball: Ball;
 let pad1: Pad;
@@ -33,7 +35,7 @@ const hitSound = new Audio("pong_sounds_paddle_hit.wav");
 const scoreSound = new Audio("pong_sounds_score.wav");
 const wallSound = new Audio("pong_sounds_wall_hit.wav");
 
-const winScore = 1;
+
 
 export function mouseMove(event: MouseEvent) {
   if (gameState == State.PLAY) {
@@ -81,9 +83,12 @@ function updatePlay(dt: number): void {
   ball.update(dt);
 
   // player pad responds to mouse event
+  restrictPad(pad1)
 
   // AI pad follows ball strictly
   pad2.pos.y = ball.pos.y;
+
+  restrictPad(pad2)
 
   const borderCollision = collideBorders(ball.pos);
 
@@ -118,6 +123,18 @@ function updatePlay(dt: number): void {
   }
 }
 
+function restrictPad(pad: Pad) {
+
+    if (pad.pos.y < courtThickness) {
+        pad.pos.y = courtThickness;
+    }
+
+    if (pad.pos.y + pad.pos.h > H - courtThickness) {
+        pad.pos.y = H - courtThickness - pad.pos.h
+    }
+
+}
+
 /**
  * UPDATE AFTER COLLISION
  */
@@ -135,12 +152,12 @@ function updateAfterPad2Collision() {
 function updateAfterBorderCollision(ballCollision: Side) {
   switch (ballCollision) {
     case Side.TOP:
-      ball.pos.y = 0 + 20;
+      ball.pos.y = courtThickness;
       ball.vel.y *= -Ball.acc;
       wallSound.play();
       break;
     case Side.BOTTOM:
-      ball.pos.y = H - 20 - ball.pos.h;
+      ball.pos.y = H - courtThickness - ball.pos.h;
       ball.vel.y *= -Ball.acc;
       wallSound.play();
       break;
@@ -192,7 +209,9 @@ function win() {
 
 function oneServing() {
   resetEntities();
-  ball.pos.x = pad1.pos.x + pad1.pos.w;
+  
+  // stick ball to pad but cause to detect collision
+  ball.pos.x = pad1.pos.x + pad1.pos.w - 1;
 
   const angleOffset = -Math.PI / 3;
   const angle = angleOffset + (Math.random() * Math.PI) / 3;
@@ -207,7 +226,8 @@ function oneServing() {
 function twoServing() {
   resetEntities();
 
-  ball.pos.x = pad2.pos.x - ball.pos.w;
+  // stick ball to pad but cause to detect collision
+  ball.pos.x = pad2.pos.x - ball.pos.w + 1;
 
   const angleOffset = Math.PI - Math.PI / 3;
   const angle = angleOffset + (Math.random() * Math.PI) / 3;
@@ -249,28 +269,27 @@ export function draw(): void {
 
 
 function drawCourt(ctx: CanvasRenderingContext2D) {
-    const thickness = 20;
     ctx.save();
     ctx.fillStyle = white;
     drawRect(ctx, {
         x: 0,
         y: 0,
         w: W,
-        h: thickness
+        h: courtThickness
     });
     drawRect(ctx, {
         x: 0,
-        y: H - thickness,
+        y: H - courtThickness,
         w: W,
-        h: thickness
+        h: courtThickness
     });
 
     ctx.translate(W/2, 0);
 
-    ctx.lineWidth = thickness;
+    ctx.lineWidth = courtThickness;
     ctx.strokeStyle = white;
     ctx.beginPath();
-    ctx.setLineDash([thickness, 15]);
+    ctx.setLineDash([courtThickness, 15]);
     ctx.moveTo(0, 0);
     ctx.lineTo(0, H);
     ctx.stroke();
