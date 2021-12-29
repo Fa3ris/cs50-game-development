@@ -3,7 +3,6 @@ import ctx, { canvasDim } from "./canvas";
 import { collideBorders, collisionAABBV2 } from "./collision";
 import { canvasConfig, debugConfig, padConfig } from "./config";
 import { debug, info } from "./log";
-import { resume, stop } from "./loop";
 import { Pad } from "./pad";
 import { State } from "./state";
 import {
@@ -35,6 +34,7 @@ const hitSound = new Audio("pong_sounds_paddle_hit.wav");
 const scoreSound = new Audio("pong_sounds_score.wav");
 const wallSound = new Audio("pong_sounds_wall_hit.wav");
 
+const keys: { [key: string]: string } = {};
 
 
 export function mouseMove(event: MouseEvent) {
@@ -43,34 +43,62 @@ export function mouseMove(event: MouseEvent) {
   }
 }
 
+export function keyUp(event: KeyboardEvent) {
+    debug("key up", "[" + event.key + "]")
+    delete keys[event.key]
+}
+
 export function keyPressed(event: KeyboardEvent) {
-  if (event.key === " ") {
-    if (gameState == State.START || gameState == State.SERVE) {
-      gameState = State.PLAY;
-      return;
-    }
+    debug("key pressed", "[" + event.key + "]")
+    keys[event.key] = event.key;
+}
 
-    if (gameState == State.END) {
-      score1 = 0;
-      score2 = 0;
-      resume();
-      gameState = State.START;
-      return;
-    }
 
-    if (gameState == State.PLAY) {
-      debug("pause");
-      gameState = State.PAUSED;
-      stop();
-      return;
+function logState() {
+    switch (gameState) {
+      case State.END:
+        debug("END");
+        break;
+      case State.PAUSED:
+        debug("PAUSED");
+        break;
+      case State.PLAY:
+        debug("PLAY");
+        break;
+      case State.SERVE:
+        debug("SERVE");
+        break;
+      case State.START:
+        debug("START");
+        break;
     }
+}
 
-    if (gameState == State.PAUSED) {
-      gameState = State.PLAY;
-      resume();
-      return
+export function processInput() {
+
+    logState();
+
+    if (keys[" "] != undefined) {
+      delete keys[" "]; // do not process it during next loop
+
+      switch (gameState) {
+        case State.START:
+        case State.SERVE:
+          gameState = State.PLAY;
+          break;
+        case State.PLAY:
+          gameState = State.PAUSED;
+          break;
+        case State.PAUSED:
+          gameState = State.PLAY;
+          break;
+        case State.END:
+          score1 = 0;
+          score2 = 0;
+          gameState = State.START;
+          break;
+      }
     }
-  }
 }
 
 export function update(dt: number): void {
@@ -80,6 +108,8 @@ export function update(dt: number): void {
 }
 
 function updatePlay(dt: number): void {
+  
+
   ball.update(dt);
 
   // player pad responds to mouse event
@@ -119,7 +149,7 @@ function updatePlay(dt: number): void {
   ball.adjustVelocity();
 
   if (padCollision && debugConfig.stopOnCollision) {
-    stop();
+    gameState = State.PAUSED
   }
 }
 
@@ -140,18 +170,18 @@ function restrictPad(pad: Pad) {
  */
 
 function updateAfterPad1Collision() {
-  info("pad1 collision before", JSON.stringify(ball), JSON.stringify(pad1))
+  debug("pad1 collision before", JSON.stringify(ball), JSON.stringify(pad1))
   ball.pos.x = pad1.pos.x + pad1.pos.w;
   // (Math.random() > .5 ? 1: -1)
   ball.reboundHorizontal({x: Ball.acc, y: (Math.random() > .75 ? 1: -1)})
-  info("pad1 collision after", JSON.stringify(ball), JSON.stringify(pad1))
+  debug("pad1 collision after", JSON.stringify(ball), JSON.stringify(pad1))
 }
 
 function updateAfterPad2Collision() {
-  info("pad2 collision before", JSON.stringify(ball), JSON.stringify(pad2))
+  debug("pad2 collision before", JSON.stringify(ball), JSON.stringify(pad2))
   ball.pos.x = pad2.pos.x - ball.pos.w;
   ball.reboundHorizontal({x: -Ball.acc, y: (Math.random() > .75 ? 1: -1)})
-  info("pad2 collision after", JSON.stringify(ball), JSON.stringify(pad2))
+  debug("pad2 collision after", JSON.stringify(ball), JSON.stringify(pad2))
 }
 
 function updateAfterBorderCollision(ballCollision: Side) {
@@ -205,7 +235,6 @@ function score(player: Player) {
 function win() {
   gameState = State.END;
   resetEntities();
-  stop();
 }
 
 function oneServing() {
@@ -397,7 +426,7 @@ function createBall(): Ball {
     },
   };
 
-  info("ball init", ballInit)
+  debug("ball init", ballInit)
   return new Ball(ballInit);
 }
 

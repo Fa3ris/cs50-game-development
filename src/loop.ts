@@ -13,6 +13,11 @@ export function setDraw(callback: () => void) {
   draw = callback;
 }
 
+let processInput: () => void;
+export function setProcessInput(callback: () => void) {
+  processInput = callback;
+}
+
 
 /**
  * CONSTANTS
@@ -59,6 +64,7 @@ function gameLoop(time: DOMHighResTimeStamp): void {
     accumulator = Math.min(accumulator, maxAccumulator);
     debug("accumulator", accumulator);
     while (accumulator > step) {
+      processInput();
       update(step);
       accumulator -= step;
     }
@@ -77,20 +83,20 @@ function gameLoop(time: DOMHighResTimeStamp): void {
   if (requestNextFrame) requestAnimationFrame(gameLoop);
 }
 
-export function stop() {
-  requestNextFrame = false;
-  debug('stop frame', requestNextFrame)
-  lastMillis = 0;
-  accumulator = 0;
-}
+// export function stop() {
+//   requestNextFrame = false;
+//   debug('stop frame', requestNextFrame)
+//   lastMillis = 0;
+//   accumulator = 0;
+// }
 
-export function resume() {
-  if (requestNextFrame == true) {
-    info("already looping", requestNextFrame)
-    return
-  }
-  start()
-}
+// export function resume() {
+//   if (requestNextFrame == true) {
+//     info("already looping", requestNextFrame)
+//     return
+//   }
+//   start()
+// }
 
 export function start() {
   requestNextFrame = true;
