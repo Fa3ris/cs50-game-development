@@ -37,7 +37,7 @@ const maxFrames = 100;
  */
 let lastMillis: number;
 let accumulator = 0;
-let currentFrame = 1;
+export let currentFrame = 1;
 let requestNextFrame: boolean;
 
 /**
