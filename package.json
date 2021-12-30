@@ -8,8 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "start": "parcel",
-    "start-flappy": "parcel projects/flappy-bird/index.html --dist-dir dist/flappy",
-    "start-pong": "cp -R projects/pong/static dist/pong && parcel projects/pong/index.html --dist-dir dist/pong"
+    "start-flappy": "cp -R projects/flappy-bird/static/* dist/flappy-bird && parcel projects/flappy-bird/index.html --dist-dir dist/flappy-bird",
+    "start-pong": "cp -R projects/pong/static/* dist/pong && parcel projects/pong/index.html --dist-dir dist/pong"
   },
   "keywords": [],
   "author": "",
