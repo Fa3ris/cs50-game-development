@@ -1,5 +1,5 @@
 import { canvasConfig } from "./config";
-import { debug, info } from "./log";
+import { debug, info } from "~/common/log";
 import { Position } from "./types";
 
 const { W, H, pixelRatio, canvasSelector } = canvasConfig;

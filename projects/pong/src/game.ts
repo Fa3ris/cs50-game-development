@@ -2,7 +2,7 @@ import { Ball } from "./ball";
 import ctx, { canvasDim } from "./canvas";
 import { collideBorders, collisionAABBV2 } from "./collision";
 import { canvasConfig, debugConfig, padConfig } from "./config";
-import { debug, info } from "./log";
+import { debug, info } from "~/common/log";
 import { Pad } from "./pad";
 import { State } from "./state";
 import {

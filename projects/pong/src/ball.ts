@@ -1,6 +1,6 @@
 import { Ball as BallType, Position, Vector } from "./types";
 import { ballConfig } from "./config";
-import { debug, info } from "./log";
+import { debug, info } from "~/common/log";
 
 const {v0, acc, maxVx, maxVy} = ballConfig;
 
