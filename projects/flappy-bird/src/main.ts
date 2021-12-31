@@ -35,6 +35,7 @@ const pipeCenterY = 215
 
 /* BIRD */
 const bird = {
+    xPos :W/2 - 70, 
     yPos: H/2,
     dy: 0,
     jump: false
@@ -104,6 +105,15 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
+const gapH = 100;
+
+const gapStart = 50
+
+type PipePair = {
+    x: number,
+    gapStart: number
+}
+
 function draw() {
 
     ctx.clearRect(0, 0, W, H)
@@ -123,26 +133,8 @@ function draw() {
     0, 0, images["background"].width, images["background"].height,
     -bgScroll, 0, bgScaling * images["background"].width, H);
 
-    // const w = 10, h = 20
-    // const x = 75, y = 100
-    // ctx.save() 
-    // ctx.translate(x, y )
-    // ctx.fillStyle = "red"
-    // ctx.fillRect(0, 0, w, h)
-    // ctx.restore()
 
-    // ctx.save()
-    // ctx.translate(x + w/2, y + h/2)
-    // ctx.rotate(Math.PI / 2)
-    // ctx.fillStyle = "blue"
-    // ctx.fillRect(-w/2, -h/2, w, h)
-    // ctx.restore()
-
-    const gapStart = 50
-
-    const gapH = 100;
-
-    const targetX = 150
+    // UPPER PIPE
     const targetY = -images["pipe"].height + gapStart
     ctx.save()
     ctx.translate(targetX + pipeCenterX, targetY + pipeCenterY) // translate to center of pipe image where it will be drawn
@@ -150,6 +142,7 @@ function draw() {
     ctx.drawImage(images["pipe"], - pipeCenterX, - pipeCenterY) // draw image from negative value, because it is relative to center of the pipe image
     ctx.restore()
 
+    // LOWER PIPE
     ctx.drawImage(
         images["pipe"], targetX, gapStart + gapH, 
     )
@@ -162,22 +155,68 @@ function draw() {
 
   // draw bird
   ctx.drawImage(
-      images["bird"], W/2 - 70, bird.yPos
+      images["bird"], bird.xPos, bird.yPos
   )
+
+  // draw hitbox
+  if (collideLow || collideUpper) {
+    
+    ctx.save()
+    ctx.strokeStyle = collideLow ? "red" : "blue"
+
+    ctx.strokeRect(bird.xPos - 1, bird.yPos - 1, images["bird"].width + 2, images["bird"].height + 2)
+    ctx.restore();
+    collideLow = false
+    collideUpper = false
+  }
+
 }
 
+function collisionAABB(x1: number, y1: number, w1: number, h1: number, x2: number, y2: number, w2: number, h2: number): boolean {
+    const collisionDetected =
+    x1 < x2 + w2 &&
+    x1 + w1 > x2 &&
+    y1 < y2 + h2 &&
+    h1 + y1 > y2;
+  return collisionDetected;
+}
+
+const targetX =  bird.xPos - 10
 // Adjust values
 const G = 20
 const impulse = -5
 
+let collideLow = false;
+let collideUpper = false
+
 function update(dt: number) {
 
+  // BIRD - not realistic
   bird.dy += G * dt
   if (bird.jump) {
     bird.jump = false
     bird.dy = impulse;
   }
   bird.yPos += bird.dy
+
+  // LOWER PIPE
+  // check collision between (targetX, gapStart + gapHeight) and (targetX + pipeW, H)
+  const lowerCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
+  targetX, gapStart + gapH, images["pipe"].width, H - gapStart - gapH)
+
+  if (lowerCollision) {
+    collideLow = true
+  }
+
+
+  // UPPER PIPE
+  // check collision between (targetX, 0) and (targetX + pipeW, gapStart)
+  const upperCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
+  targetX, 0, images["pipe"].width, gapStart)
+
+  if (upperCollision) {
+    collideUpper = true
+  }
 
   // loop background and ground images when reach the looping point
   bgScroll = (bgScroll + bgScrollSpeed * dt) % bgLoopingPoint;
