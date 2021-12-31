@@ -114,6 +114,8 @@ type PipePair = {
     gapStart: number
 }
 
+const pairs: PipePair[] = []
+
 function draw() {
 
     ctx.clearRect(0, 0, W, H)
@@ -137,9 +139,8 @@ function draw() {
     // UPPER PIPE
     const targetY = -images["pipe"].height + gapStart
     ctx.save()
-    ctx.translate(targetX + pipeCenterX, targetY + pipeCenterY) // translate to center of pipe image where it will be drawn
-    ctx.rotate(Math.PI)
-    ctx.drawImage(images["pipe"], - pipeCenterX, - pipeCenterY) // draw image from negative value, because it is relative to center of the pipe image
+    ctx.scale(1, -1) // flip horizontally by scaling y
+    ctx.drawImage(images["pipe"], targetX, - gapStart ) // y axis now points upward
     ctx.restore()
 
     // LOWER PIPE
