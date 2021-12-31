@@ -26,24 +26,11 @@ const groundScrollSpeed = 30;
 const groundLoopingPoint = W
 
 
-// maybe remove
-type Vector2D = {
-    x: number;
-    y: number;
-}
-
-// maybe remove
-type Bird = {
-    pos: Vector2D;
-    vel: Vector2D;
-    accel: Vector2D;
-}
-
 /* BIRD */
 const bird = {
     yPos: H/2,
-    yVel: 0,
-    yAccel: 0,
+    dy: 0,
+    jump: false
 }
 
 
@@ -81,8 +68,7 @@ document.addEventListener("keyup", function(e) {
 
 const frameCount = document.querySelector("#frame-count") as Element;
 const yPosStat = document.querySelector("#yPos") as Element;
-const yVelStat = document.querySelector("#yVel") as Element;
-const yAccelStat = document.querySelector("#yAccel") as Element;
+const dyStat = document.querySelector("#dy") as Element;
 
 const images: { [index: string]: HTMLImageElement } = {};
 
@@ -115,7 +101,7 @@ function draw() {
     ctx.clearRect(0, 0, W, H)
   frameCount.innerHTML = currentFrame.toString();
 
-  yVelStat.innerHTML = bird.yVel.toString()
+  dyStat.innerHTML = bird.dy.toString()
   yPosStat.innerHTML = bird.yPos.toString()
 
     /*
@@ -142,23 +128,17 @@ function draw() {
 }
 
 // Adjust values
-const G = 100
-
-const maxUpSpeed = -50
-
-const impulse = -5000
+const G = 20
+const impulse = -5
 
 function update(dt: number) {
 
-  bird.yAccel += G
-
-  yAccelStat.innerHTML = bird.yAccel.toString()
-
-  bird.yVel += bird.yAccel * dt
-
-  bird.yVel = Math.max(bird.yVel, maxUpSpeed)
-  bird.yPos += bird.yVel * dt
-  bird.yAccel = 0
+  bird.dy += G * dt
+  if (bird.jump) {
+    bird.jump = false
+    bird.dy = impulse;
+  }
+  bird.yPos += bird.dy
 
   // loop background and ground images when reach the looping point
   bgScroll = (bgScroll + bgScrollSpeed * dt) % bgLoopingPoint;
@@ -169,11 +149,12 @@ function update(dt: number) {
   console.debug("bgscroll", -bgScroll, "groundscroll", groundScroll);
 }
 
+
 function processInput() {
     if (keys[" "] != undefined && keys[" "] == false) {
         keys[" "] = true
         console.debug("jump")
-        bird.yAccel += impulse
+        bird.jump = true;
     }
 
 }
