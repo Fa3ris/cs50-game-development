@@ -16,6 +16,8 @@ const H = 288;
 let bgScroll = 0;
 const bgScrollSpeed = 10;
 const bgScaling = 1.66;
+
+// specific to image
 const bgBaseLoopingPoint = 568;
 const bgLoopingPoint = bgBaseLoopingPoint * bgScaling;
 
@@ -24,6 +26,11 @@ let groundScroll = 500;
 const groundScrollSpeed = 30;
 
 const groundLoopingPoint = W
+
+
+// calculated from image
+const pipeCenterX = 35
+const pipeCenterY = 215
 
 
 /* BIRD */
@@ -78,6 +85,7 @@ async function main() {
   images["background"] = await loadImage("background.png");
   images["ground"] = await loadImage("ground.png");
   images["bird"] = await loadImage("bird.png");
+  images["pipe"] = await loadImage("pipe.png");
 
 
   setDraw(draw);
@@ -114,6 +122,37 @@ function draw() {
     images["background"],
     0, 0, images["background"].width, images["background"].height,
     -bgScroll, 0, bgScaling * images["background"].width, H);
+
+    // const w = 10, h = 20
+    // const x = 75, y = 100
+    // ctx.save() 
+    // ctx.translate(x, y )
+    // ctx.fillStyle = "red"
+    // ctx.fillRect(0, 0, w, h)
+    // ctx.restore()
+
+    // ctx.save()
+    // ctx.translate(x + w/2, y + h/2)
+    // ctx.rotate(Math.PI / 2)
+    // ctx.fillStyle = "blue"
+    // ctx.fillRect(-w/2, -h/2, w, h)
+    // ctx.restore()
+
+    const gapStart = 50
+
+    const gapH = 100;
+
+    const targetX = 150
+    const targetY = -images["pipe"].height + gapStart
+    ctx.save()
+    ctx.translate(targetX + pipeCenterX, targetY + pipeCenterY) // translate to center of pipe image where it will be drawn
+    ctx.rotate(Math.PI)
+    ctx.drawImage(images["pipe"], - pipeCenterX, - pipeCenterY) // draw image from negative value, because it is relative to center of the pipe image
+    ctx.restore()
+
+    ctx.drawImage(
+        images["pipe"], targetX, gapStart + gapH, 
+    )
 
   // draw ground image as-is
   ctx.drawImage(
