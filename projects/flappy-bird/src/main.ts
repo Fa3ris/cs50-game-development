@@ -111,10 +111,13 @@ const gapStart = 50
 
 type PipePair = {
     x: number,
-    gapStart: number
+    gapStart: number,
+    gapH: number
 }
 
 const pairs: PipePair[] = []
+
+let spawnTimer = 0;
 
 function draw() {
 
@@ -136,18 +139,18 @@ function draw() {
     -bgScroll, 0, bgScaling * images["background"].width, H);
 
 
-    // UPPER PIPE
-    const targetY = -images["pipe"].height + gapStart
-    ctx.save()
-    ctx.scale(1, -1) // flip horizontally by scaling y
-    ctx.drawImage(images["pipe"], targetX, - gapStart ) // y axis now points upward
-    ctx.restore()
+    /* PIPES */
+    for (const pair of pairs) {
+      // UPPER PIPE
+      ctx.save();
+      ctx.scale(1, -1); // flip horizontally by scaling y
+      ctx.drawImage(images["pipe"], pair.x, -pair.gapStart); // y axis now points upward
+      ctx.restore();
 
-    // LOWER PIPE
-    ctx.drawImage(
-        images["pipe"], targetX, gapStart + gapH, 
-    )
-
+      // LOWER PIPE
+      ctx.drawImage(images["pipe"], pair.x, pair.gapStart + pair.gapH);
+    }
+   
   // draw ground image as-is
   ctx.drawImage(
     images["ground"],
@@ -161,7 +164,6 @@ function draw() {
 
   // draw hitbox
   if (collideLow || collideUpper) {
-    
     ctx.save()
     ctx.strokeStyle = collideLow ? "red" : "blue"
 
@@ -190,6 +192,8 @@ const impulse = -5
 let collideLow = false;
 let collideUpper = false
 
+
+let cleanPipeTimer = 0;
 function update(dt: number) {
 
   // BIRD - not realistic
@@ -200,23 +204,34 @@ function update(dt: number) {
   }
   bird.yPos += bird.dy
 
-  // LOWER PIPE
-  // check collision between (targetX, gapStart + gapHeight) and (targetX + pipeW, H)
-  const lowerCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
-  targetX, gapStart + gapH, images["pipe"].width, H - gapStart - gapH)
+  for (const pair of pairs) {
+      
+    // LOWER PIPE
+    // check collision between (targetX, gapStart + gapHeight) and (targetX + pipeW, H)
+    const lowerCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
+    pair.x, pair.gapStart + gapH, images["pipe"].width, H - pair.gapStart - pair.gapH)
 
-  if (lowerCollision) {
-    collideLow = true
+    if (lowerCollision) {
+        collideLow = true
+        break
+    }
+
+
+    // UPPER PIPE
+    // check collision between (targetX, 0) and (targetX + pipeW, gapStart)
+    const upperCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
+    pair.x, 0, images["pipe"].width, pair.gapStart)
+
+    if (upperCollision) {
+        collideUpper = true
+        break
+    }
+
+   
   }
 
-
-  // UPPER PIPE
-  // check collision between (targetX, 0) and (targetX + pipeW, gapStart)
-  const upperCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
-  targetX, 0, images["pipe"].width, gapStart)
-
-  if (upperCollision) {
-    collideUpper = true
+  for (const pair of pairs) {
+    pair.x -= 2
   }
 
   // loop background and ground images when reach the looping point
@@ -226,8 +241,43 @@ function update(dt: number) {
   console.debug(bgLoopingPoint);
   console.debug(groundLoopingPoint);
   console.debug("bgscroll", -bgScroll, "groundscroll", groundScroll);
+
+  // REMOVE PIPES
+  cleanPipeTimer += dt
+
+  if (cleanPipeTimer >= 10) {
+      cleanPipeTimer -= 10
+
+      let nPipeToRemove = 0;
+      for (let i = 0; i < pairs.length; i++) {
+          if (pairs[i].x < -images["pipe"].width) { // out of screen
+              nPipeToRemove++
+          }
+      }
+
+      if (nPipeToRemove > 0) {
+          const removed = pairs.splice(0, nPipeToRemove)
+          console.log('removed', removed)
+      }
+  }
+
+  // SPAWN PIPE
+  spawnTimer += dt
+
+  if (spawnTimer >= 2) {
+      spawnTimer -= 2;
+      pairs.push({
+          gapStart: random(50, 70),
+          x: W + images["pipe"].width + 10,
+          gapH: random(100, 150)
+      })
+  }
 }
 
+
+function random(min:number, max: number) {
+    return min + Math.random() * (max - min)
+}
 
 function processInput() {
     if (keys[" "] != undefined && keys[" "] == false) {
