@@ -70,7 +70,8 @@ document.addEventListener("keyup", function(e) {
 enum State {
     TITLE,
     PLAY,
-    SCORE_SCREEN
+    SCORE_SCREEN,
+    COUNTDOWN
 }
 
 let gameState: State = State.TITLE;
@@ -157,6 +158,14 @@ function draw() {
     images["ground"],
     -groundScroll, H - images["ground"].height, images["ground"].width, images["ground"].height
   );
+
+  if (gameState == State.COUNTDOWN) {
+    ctx.save()
+    ctx.font = "40px/1.5 flappy-font"
+    ctx.fillStyle = "white"
+    ctx.fillText(`${counter}`, W/2 - (ctx.measureText(`${counter}`).width / 2), H/2)
+    ctx.restore()
+}
 
   if (gameState == State.PLAY) {
 
@@ -256,8 +265,25 @@ let collideBottomScreen = false
 let cleanPipeTimer = 0;
 let spawnTimer = 0;
 
+let counter = 3;
+let elapsed = 0
 
 function update(dt: number) {
+
+  if (gameState == State.COUNTDOWN) {
+      elapsed += dt;
+
+      if (elapsed >= .75) {
+          elapsed -= .75;
+          counter--
+      }
+
+      if (counter == 0) {
+          gameState = State.PLAY
+      }
+  }
+
+
 
   if (gameState == State.PLAY) {
       
@@ -389,7 +415,7 @@ function processInput() {
 
     if (gameState == State.TITLE || gameState == State.SCORE_SCREEN) {
         if (keys["Enter"] !== undefined) {
-            gameState = State.PLAY
+            gameState = State.COUNTDOWN
             score = 0
             pairs.length = 0 // remove all pipes
             collideLow = false
@@ -405,6 +431,11 @@ function processInput() {
             bird.yPos = H/2
             bird.dy = 0
             bird.jump = false
+
+
+            // reset countdown
+            counter = 3;
+            elapsed = 0
         }
     }
 
