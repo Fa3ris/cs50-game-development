@@ -36,6 +36,8 @@ const bird = {
 }
 
 
+let score = 0;
+
 let canvas = document.querySelector("canvas");
 if (!canvas) {
   canvas = document.createElement("canvas");
@@ -106,6 +108,7 @@ type PipePair = {
     x: number,
     gapStart: number,
     gapH: number
+    scored: boolean
 }
 
 const pairs: PipePair[] = []
@@ -190,6 +193,14 @@ function draw() {
         ctx.strokeRect(bird.xPos - 1, bird.yPos - 1, images["bird"].width + 2, images["bird"].height + 2)
         ctx.restore();
       }
+
+      // SCORE
+      ctx.save()
+      ctx.font = "20px/1.5 flappy-font"
+      ctx.fillStyle = "white"
+      ctx.fillText(`SCORE: ${score}`, 10 , (20*1.5))
+      ctx.restore()
+
   }
 
     // draw title
@@ -250,8 +261,19 @@ function update(dt: number) {
             collideBottomScreen = true
         }
 
-        // PIPES
+        // PIPES COLLISION OR SCORE
         for (const pair of pairs) {
+
+            // passed pipe
+          if (pair.x + images["pipe"].width < bird.xPos) {
+
+            if (!pair.scored) {
+                pair.scored = true;
+                score++ 
+            }
+
+            continue // pipe is passed no need to check collision
+          }
             
           // LOWER PIPE
           // check collision between (targetX, gapStart + gapHeight) and (targetX + pipeW, H)
@@ -277,6 +299,7 @@ function update(dt: number) {
          
         }
       
+         // PIPES ADVANCE
         for (const pair of pairs) {
           pair.x -= 2
         }
@@ -320,7 +343,8 @@ function update(dt: number) {
           pairs.push({
               gapStart: random(50, 70),
               x: W + images["pipe"].width + 10,
-              gapH: random(100, 150)
+              gapH: random(100, 150),
+              scored: false
           })
       }
 
@@ -347,6 +371,7 @@ function processInput() {
         if (keys["Enter"] != undefined) {
             console.debug("play")
             gameState = State.PLAY
+            score = 0
         }
     }
 
