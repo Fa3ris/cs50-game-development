@@ -119,6 +119,7 @@ const pairs: PipePair[] = []
 
 let spawnTimer = 0;
 
+
 function draw() {
 
     ctx.clearRect(0, 0, W, H)
@@ -209,7 +210,7 @@ function update(dt: number) {
     // LOWER PIPE
     // check collision between (targetX, gapStart + gapHeight) and (targetX + pipeW, H)
     const lowerCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
-    pair.x, pair.gapStart + gapH, images["pipe"].width, H - pair.gapStart - pair.gapH)
+    pair.x, pair.gapStart + pair.gapH, images["pipe"].width, H - pair.gapStart - pair.gapH)
 
     if (lowerCollision) {
         collideLow = true
