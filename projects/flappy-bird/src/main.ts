@@ -36,8 +36,6 @@ const bird = {
 }
 
 let bestScore = 0;
-
-
 let score = 0;
 
 let canvas = document.querySelector("canvas");
@@ -66,6 +64,9 @@ document.addEventListener("keyup", function(e) {
     delete keys[e.key]
 })
 
+canvas.addEventListener("click", function(e) {
+    bird.jump = true
+})
 
 enum State {
     TITLE,

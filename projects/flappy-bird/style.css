@@ -11,6 +11,10 @@
     justify-content: space-evenly;
 
     align-content: space-around;
+
+    /* prevent selection when double clicking on canvas */
+    user-select: none;
+    cursor: pointer;
 }
 
 @font-face {
