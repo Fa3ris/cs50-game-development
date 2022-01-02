@@ -53,11 +53,6 @@ const keys: {[index: string]: boolean } = {}
 
 
 document.addEventListener("keydown", function(e) {
-    if (e.key === " ") {
-        console.debug("space pressed")
-    }
-
-    console.log(e.key)
     if (keys[e.key] == undefined) {
         keys[e.key] = false
     }
@@ -167,14 +162,33 @@ function draw() {
       )
 
       // draw hitbox
-      if (collideLow || collideUpper) {
+      if (collideLow || collideUpper || collideBottomScreen || collideTopScreen) {
+
+
         ctx.save()
-        ctx.strokeStyle = collideLow ? "red" : "blue"
+
+        if (collideLow) {
+            ctx.strokeStyle = "red";
+            collideLow = false
+        }
+
+        if (collideUpper) {
+            ctx.strokeStyle = "blue";
+            collideUpper = false
+        }
+
+        if (collideBottomScreen) {
+            ctx.strokeStyle = "purple";
+            collideBottomScreen = false
+        }
+
+        if (collideTopScreen) {
+            ctx.strokeStyle = "pink";
+            collideTopScreen = false
+        }
     
         ctx.strokeRect(bird.xPos - 1, bird.yPos - 1, images["bird"].width + 2, images["bird"].height + 2)
         ctx.restore();
-        collideLow = false
-        collideUpper = false
       }
   }
 
@@ -212,6 +226,9 @@ let collideUpper = false
 
 let cleanPipeTimer = 0;
 
+let collideTopScreen = false
+let collideBottomScreen = false
+
 function update(dt: number) {
 
   if (gameState == State.PLAY) {
@@ -223,6 +240,15 @@ function update(dt: number) {
           bird.dy = impulse;
         }
         bird.yPos += bird.dy
+
+
+        if (bird.yPos < 0) {
+            collideTopScreen = true
+        }
+
+        if (bird.yPos + images["bird"].height > H - images["ground"].height) {
+            collideBottomScreen = true
+        }
 
         // PIPES
         for (const pair of pairs) {
