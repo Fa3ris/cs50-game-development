@@ -27,12 +27,6 @@ const groundScrollSpeed = 30;
 
 const groundLoopingPoint = W
 
-
-// calculated from image
-const pipeCenterX = 35
-const pipeCenterY = 215
-
-
 /* BIRD */
 const bird = {
     xPos :W/2 - 70, 
@@ -63,6 +57,7 @@ document.addEventListener("keydown", function(e) {
         console.debug("space pressed")
     }
 
+    console.log(e.key)
     if (keys[e.key] == undefined) {
         keys[e.key] = false
     }
@@ -73,6 +68,12 @@ document.addEventListener("keyup", function(e) {
 })
 
 
+enum State {
+    TITLE,
+    PLAY,
+}
+
+let gameState: State = State.TITLE;
 
 const frameCount = document.querySelector("#frame-count") as Element;
 const yPosStat = document.querySelector("#yPos") as Element;
@@ -105,9 +106,6 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-const gapH = 100;
-
-const gapStart = 50
 
 type PipePair = {
     x: number,
@@ -123,6 +121,7 @@ let spawnTimer = 0;
 function draw() {
 
     ctx.clearRect(0, 0, W, H)
+
   frameCount.innerHTML = currentFrame.toString();
 
   dyStat.innerHTML = bird.dy.toString()
@@ -140,16 +139,18 @@ function draw() {
     -bgScroll, 0, bgScaling * images["background"].width, H);
 
 
-    /* PIPES */
-    for (const pair of pairs) {
-      // UPPER PIPE
-      ctx.save();
-      ctx.scale(1, -1); // flip horizontally by scaling y
-      ctx.drawImage(images["pipe"], pair.x, -pair.gapStart); // y axis now points upward
-      ctx.restore();
-
-      // LOWER PIPE
-      ctx.drawImage(images["pipe"], pair.x, pair.gapStart + pair.gapH);
+    if (gameState == State.PLAY) {
+        /* PIPES */
+        for (const pair of pairs) {
+          // UPPER PIPE
+          ctx.save();
+          ctx.scale(1, -1); // flip horizontally by scaling y
+          ctx.drawImage(images["pipe"], pair.x, -pair.gapStart); // y axis now points upward
+          ctx.restore();
+    
+          // LOWER PIPE
+          ctx.drawImage(images["pipe"], pair.x, pair.gapStart + pair.gapH);
+        }
     }
    
   // draw ground image as-is
@@ -158,21 +159,38 @@ function draw() {
     -groundScroll, H - images["ground"].height, images["ground"].width, images["ground"].height
   );
 
-  // draw bird
-  ctx.drawImage(
-      images["bird"], bird.xPos, bird.yPos
-  )
+  if (gameState == State.PLAY) {
 
-  // draw hitbox
-  if (collideLow || collideUpper) {
-    ctx.save()
-    ctx.strokeStyle = collideLow ? "red" : "blue"
+      // draw bird
+      ctx.drawImage(
+          images["bird"], bird.xPos, bird.yPos
+      )
 
-    ctx.strokeRect(bird.xPos - 1, bird.yPos - 1, images["bird"].width + 2, images["bird"].height + 2)
-    ctx.restore();
-    collideLow = false
-    collideUpper = false
+      // draw hitbox
+      if (collideLow || collideUpper) {
+        ctx.save()
+        ctx.strokeStyle = collideLow ? "red" : "blue"
+    
+        ctx.strokeRect(bird.xPos - 1, bird.yPos - 1, images["bird"].width + 2, images["bird"].height + 2)
+        ctx.restore();
+        collideLow = false
+        collideUpper = false
+      }
   }
+
+    // draw title
+    if (gameState == State.TITLE) {
+        ctx.save()
+        ctx.font = "40px/1.5 flappy-font"
+        ctx.fillStyle = "white"
+        ctx.fillText("Hello, Flappy", W/2 - (ctx.measureText("Hello, Flappy").width / 2), H/2)
+        // ctx.strokeStyle = "red";
+        // ctx.strokeRect(W/2 - (ctx.measureText("Hello, Flappy").width / 2),  H/2 - 40, ctx.measureText("Hello, Flappy").width, 40*1.5)
+        ctx.font = "20px flappy-font"
+        ctx.fillText("Press Enter", W/2 - (ctx.measureText("Press Enter").width / 2), H/2 - 20 + (40*1.5))
+        ctx.restore()
+    }
+
 
 }
 
@@ -185,7 +203,6 @@ function collisionAABB(x1: number, y1: number, w1: number, h1: number, x2: numbe
   return collisionDetected;
 }
 
-const targetX =  bird.xPos - 10
 // Adjust values
 const G = 20
 const impulse = -5
@@ -193,47 +210,52 @@ const impulse = -5
 let collideLow = false;
 let collideUpper = false
 
-
 let cleanPipeTimer = 0;
+
 function update(dt: number) {
 
-  // BIRD - not realistic
-  bird.dy += G * dt
-  if (bird.jump) {
-    bird.jump = false
-    bird.dy = impulse;
-  }
-  bird.yPos += bird.dy
-
-  for (const pair of pairs) {
+  if (gameState == State.PLAY) {
       
-    // LOWER PIPE
-    // check collision between (targetX, gapStart + gapHeight) and (targetX + pipeW, H)
-    const lowerCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
-    pair.x, pair.gapStart + pair.gapH, images["pipe"].width, H - pair.gapStart - pair.gapH)
+        // BIRD - not realistic
+        bird.dy += G * dt
+        if (bird.jump) {
+          bird.jump = false
+          bird.dy = impulse;
+        }
+        bird.yPos += bird.dy
 
-    if (lowerCollision) {
-        collideLow = true
-        break
-    }
-
-
-    // UPPER PIPE
-    // check collision between (targetX, 0) and (targetX + pipeW, gapStart)
-    const upperCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
-    pair.x, 0, images["pipe"].width, pair.gapStart)
-
-    if (upperCollision) {
-        collideUpper = true
-        break
-    }
-
-   
+        // PIPES
+        for (const pair of pairs) {
+            
+          // LOWER PIPE
+          // check collision between (targetX, gapStart + gapHeight) and (targetX + pipeW, H)
+          const lowerCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
+          pair.x, pair.gapStart + pair.gapH, images["pipe"].width, H - pair.gapStart - pair.gapH)
+      
+          if (lowerCollision) {
+              collideLow = true
+              break
+          }
+      
+      
+          // UPPER PIPE
+          // check collision between (targetX, 0) and (targetX + pipeW, gapStart)
+          const upperCollision = collisionAABB(bird.xPos, bird.yPos, images["bird"].width, images["bird"].height,
+          pair.x, 0, images["pipe"].width, pair.gapStart)
+      
+          if (upperCollision) {
+              collideUpper = true
+              break
+          }
+      
+         
+        }
+      
+        for (const pair of pairs) {
+          pair.x -= 2
+        }
   }
 
-  for (const pair of pairs) {
-    pair.x -= 2
-  }
 
   // loop background and ground images when reach the looping point
   bgScroll = (bgScroll + bgScrollSpeed * dt) % bgLoopingPoint;
@@ -243,48 +265,63 @@ function update(dt: number) {
   console.debug(groundLoopingPoint);
   console.debug("bgscroll", -bgScroll, "groundscroll", groundScroll);
 
-  // REMOVE PIPES
-  cleanPipeTimer += dt
+  if (gameState == State.PLAY) {
 
-  if (cleanPipeTimer >= 10) {
-      cleanPipeTimer -= 10
-
-      let nPipeToRemove = 0;
-      for (let i = 0; i < pairs.length; i++) {
-          if (pairs[i].x < -images["pipe"].width) { // out of screen
-              nPipeToRemove++
+      // REMOVE PIPES
+      cleanPipeTimer += dt
+    
+      if (cleanPipeTimer >= 10) {
+          cleanPipeTimer -= 10
+    
+          let nPipeToRemove = 0;
+          for (let i = 0; i < pairs.length; i++) {
+              if (pairs[i].x < -images["pipe"].width) { // out of screen
+                  nPipeToRemove++
+              }
+          }
+    
+          if (nPipeToRemove > 0) {
+              const removed = pairs.splice(0, nPipeToRemove)
+              console.log('removed', removed)
           }
       }
-
-      if (nPipeToRemove > 0) {
-          const removed = pairs.splice(0, nPipeToRemove)
-          console.log('removed', removed)
+    
+      // SPAWN PIPE
+      spawnTimer += dt
+    
+      if (spawnTimer >= 2) {
+          spawnTimer -= 2;
+          pairs.push({
+              gapStart: random(50, 70),
+              x: W + images["pipe"].width + 10,
+              gapH: random(100, 150)
+          })
       }
-  }
 
-  // SPAWN PIPE
-  spawnTimer += dt
-
-  if (spawnTimer >= 2) {
-      spawnTimer -= 2;
-      pairs.push({
-          gapStart: random(50, 70),
-          x: W + images["pipe"].width + 10,
-          gapH: random(100, 150)
-      })
   }
 }
-
 
 function random(min:number, max: number) {
     return min + Math.random() * (max - min)
 }
 
 function processInput() {
-    if (keys[" "] != undefined && keys[" "] == false) {
-        keys[" "] = true
-        console.debug("jump")
-        bird.jump = true;
+
+    if (gameState == State.PLAY)  {
+
+        if (keys[" "] != undefined && keys[" "] == false) {
+            keys[" "] = true
+            console.debug("jump")
+            bird.jump = true;
+        }
+    }
+
+
+    if (gameState == State.TITLE) {
+        if (keys["Enter"] != undefined) {
+            console.debug("play")
+            gameState = State.PLAY
+        }
     }
 
 }

@@ -12,3 +12,8 @@
 
     align-content: space-around;
 }
+
+@font-face {
+    font-family: "flappy-font";
+    src: url("./static/flappy-font.ttf");
+}
