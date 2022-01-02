@@ -35,6 +35,8 @@ const bird = {
     jump: false
 }
 
+let bestScore = 0;
+
 
 let score = 0;
 
@@ -68,6 +70,7 @@ document.addEventListener("keyup", function(e) {
 enum State {
     TITLE,
     PLAY,
+    SCORE_SCREEN
 }
 
 let gameState: State = State.TITLE;
@@ -112,8 +115,6 @@ type PipePair = {
 }
 
 const pairs: PipePair[] = []
-
-let spawnTimer = 0;
 
 
 function draw() {
@@ -164,7 +165,7 @@ function draw() {
           images["bird"], bird.xPos, bird.yPos
       )
 
-      // draw hitbox
+      // draw hitbox - now dead code because stop game when hit
       if (collideLow || collideUpper || collideBottomScreen || collideTopScreen) {
 
 
@@ -209,6 +210,7 @@ function draw() {
         ctx.font = "40px/1.5 flappy-font"
         ctx.fillStyle = "white"
         ctx.fillText("Hello, Flappy", W/2 - (ctx.measureText("Hello, Flappy").width / 2), H/2)
+        // draw title screen text box
         // ctx.strokeStyle = "red";
         // ctx.strokeRect(W/2 - (ctx.measureText("Hello, Flappy").width / 2),  H/2 - 40, ctx.measureText("Hello, Flappy").width, 40*1.5)
         ctx.font = "20px flappy-font"
@@ -216,6 +218,20 @@ function draw() {
         ctx.restore()
     }
 
+    if (gameState == State.SCORE_SCREEN) {
+
+        let textBoxHeight = H/2 - 50;
+        ctx.save()
+        ctx.font = "40px/1.5 flappy-font"
+        ctx.fillStyle = "white"
+        ctx.fillText(`Your score is ${score}`, W/2 - (ctx.measureText(`Your score is ${score}`).width / 2), textBoxHeight)
+        ctx.font = "20px/1 flappy-font"
+        textBoxHeight += (40*1.5) - 20
+        ctx.fillText(`Best score is ${bestScore}`, W/2 - (ctx.measureText(`Best score is ${bestScore}`).width / 2), textBoxHeight)
+        textBoxHeight += 20
+        ctx.fillText("Press Enter", W/2 - (ctx.measureText("Press Enter").width / 2), textBoxHeight)
+        ctx.restore()
+    }
 
 }
 
@@ -234,11 +250,12 @@ const impulse = -5
 
 let collideLow = false;
 let collideUpper = false
-
-let cleanPipeTimer = 0;
-
 let collideTopScreen = false
 let collideBottomScreen = false
+
+let cleanPipeTimer = 0;
+let spawnTimer = 0;
+
 
 function update(dt: number) {
 
@@ -303,6 +320,11 @@ function update(dt: number) {
         for (const pair of pairs) {
           pair.x -= 2
         }
+
+        if (collideLow || collideUpper || collideBottomScreen || collideTopScreen) {
+            gameState = State.SCORE_SCREEN
+            bestScore = Math.max(bestScore, score)
+        }
   }
 
 
@@ -358,20 +380,31 @@ function random(min:number, max: number) {
 function processInput() {
 
     if (gameState == State.PLAY)  {
-
         if (keys[" "] != undefined && keys[" "] == false) {
             keys[" "] = true
-            console.debug("jump")
             bird.jump = true;
         }
     }
 
 
-    if (gameState == State.TITLE) {
-        if (keys["Enter"] != undefined) {
-            console.debug("play")
+    if (gameState == State.TITLE || gameState == State.SCORE_SCREEN) {
+        if (keys["Enter"] !== undefined) {
             gameState = State.PLAY
             score = 0
+            pairs.length = 0 // remove all pipes
+            collideLow = false
+            collideBottomScreen = false
+            collideUpper = false
+            collideTopScreen = false
+
+            // reset timers
+            spawnTimer = 0
+            cleanPipeTimer = 0
+
+            // reset bird
+            bird.yPos = H/2
+            bird.dy = 0
+            bird.jump = false
         }
     }
 
