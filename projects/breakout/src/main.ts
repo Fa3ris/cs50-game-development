@@ -65,8 +65,8 @@ enum State {
     TITLE,
 }
 
-let elementsPerRow: number
-let elementsPerCol: number
+let nbCols: number
+let nbRows: number
 
 let col = 0
 let row = 10
@@ -74,15 +74,101 @@ let row = 10
 const tileW = 32;
 const tileH = 16;
 
+const nBrickTiles = 21
+
+type TileInfo = {
+    x: number,
+    y: number,
+}
+let bricksPositions: TileInfo[]
+let tilesInfos: TileInfo[]
+
+let bluePaddlePositions: TileInfo[]
+
+enum PaddleColor {
+    BLUE,
+    GREEN,
+    RED,
+    PURPLE
+}
+
+enum PaddleSize {
+    SMALL,
+    MEDIUM,
+    BIG,
+    JUMBO
+}
+
+const paddleMap: Map<PaddleColor, Map<PaddleSize, {info: TileInfo, size: number}>> = new Map()
+
 async function main() {
   images["background"] = await loadImage("img/background.png");
 
   sprites["elements"] = await loadImage("sprite/brick-paddle-ball.png")
 
-  elementsPerCol = sprites["elements"].height / tileH - 2; // there is unused space in the image
-  elementsPerRow = sprites["elements"].width / tileW;
+  nbRows = sprites["elements"].height / tileH - 2; // there is unused space in the image
+  nbCols = sprites["elements"].width / tileW;
 
-  console.log(elementsPerRow, elementsPerCol)
+  console.log(nbCols, nbRows)
+
+  tilesInfos = tilePositions(nbRows, nbCols)
+  bricksPositions =tilesInfos.slice(0, nBrickTiles)
+
+  bluePaddlePositions = tilesInfos.slice(24, 24 + 12)
+
+  const bluePaddleInfo = new Map<PaddleSize, {info: TileInfo, size: number}>()
+
+  bluePaddleInfo.set(PaddleSize.SMALL, {
+      info: {
+          x: bluePaddlePositions[0].x,
+          y: bluePaddlePositions[0].y
+      },
+      size: smallPaddleW
+  })
+
+  bluePaddleInfo.set(PaddleSize.MEDIUM, {
+    info: {
+        x: bluePaddlePositions[smallPaddleW].x,
+        y: bluePaddlePositions[smallPaddleW].y
+    },
+    size: mediumPaddleW
+})
+
+bluePaddleInfo.set(PaddleSize.BIG, {
+    info: {
+        x: bluePaddlePositions[smallPaddleW + mediumPaddleW].x,
+        y: bluePaddlePositions[smallPaddleW + mediumPaddleW].y
+    },
+    size: bigPaddleW
+})
+
+
+    bluePaddleInfo.set(PaddleSize.JUMBO, {
+        info: {
+            x: bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].x,
+            y: bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].y
+        },
+        size: jumboPaddleW
+    })
+
+    paddleMap.set(PaddleColor.BLUE, bluePaddleInfo)
+
+
+
+   // small
+   ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[0].x, tileH * bluePaddlePositions[0].y, tileW * smallPaddleW, tileH, 10, 99, tileW * smallPaddleW, tileH)
+   // middle
+   ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW].x, tileH * bluePaddlePositions[smallPaddleW].y, tileW * mediumPaddleW, tileH, 10, 120, tileW * mediumPaddleW, tileH)
+
+   // big -- white line appears
+   ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW + mediumPaddleW].x, tileH * bluePaddlePositions[smallPaddleW + mediumPaddleW].y, tileW * bigPaddleW, tileH, 10, 150, tileW * bigPaddleW, tileH)
+   
+   // jumbo
+   ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].x, tileH * bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].y, tileW * jumboPaddleW, tileH, 10, 200, tileW * jumboPaddleW, tileH)
+
+
+  console.log("paddle blue", bluePaddlePositions)
+
   setDraw(draw);
   setUpdate(update);
   setProcessInput(processInput);
@@ -117,26 +203,112 @@ function draw() {
     ctx.fillText(text2, W/2 - (ctx.measureText(text2).width / 2), height)
 
 
-    ctx.drawImage(sprites["elements"], tileW * col, tileH * row, tileW, tileH, 10, 10, tileW, tileH)
+    const brickPosX = 10
+    const brickPosY = 10
+
+    ctx.strokeStyle = "red"
+    ctx.strokeRect(brickPosX, brickPosY, tileW, tileH)
+    ctx.drawImage(sprites["elements"], tileW * bricksPositions[brickIndex].x, tileH * bricksPositions[brickIndex].y, tileW, tileH, brickPosX, brickPosY, tileW, tileH)
+
+    const elementPosX = 60
+    const elementPosY = 10
+    
+    ctx.strokeRect(elementPosX, elementPosY, tileW, tileH)
+
+    ctx.drawImage(sprites["elements"], tileW * tilesInfos[elementIndex].x, tileH * tilesInfos[elementIndex].y, tileW, tileH, elementPosX, elementPosY, tileW, tileH)
+
+
+    // draw paddle
+
+    // small
+    ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[0].x, tileH * bluePaddlePositions[0].y, tileW * smallPaddleW, tileH, 10, 99, tileW * smallPaddleW, tileH)
+    // middle
+    ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW].x, tileH * bluePaddlePositions[smallPaddleW].y, tileW * mediumPaddleW, tileH, 10, 120, tileW * mediumPaddleW, tileH)
+
+    // big -- white line appears
+    ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW + mediumPaddleW].x, tileH * bluePaddlePositions[smallPaddleW + mediumPaddleW].y, tileW * bigPaddleW, tileH, 10, 150, tileW * bigPaddleW, tileH)
+    
+    // jumbo
+    ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].x, tileH * bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].y, tileW * jumboPaddleW, tileH, 10, 200, tileW * jumboPaddleW, tileH)
+
+
+    let smallPaddleInfo = paddleMap.get(PaddleColor.BLUE)?.get(PaddleSize.SMALL)
+
+    if (smallPaddleInfo == undefined) {
+        throw "is undefined"
+    }
+
+    ctx.drawImage(sprites["elements"], tileW * smallPaddleInfo.info.x, tileH * smallPaddleInfo.info.y, tileW * smallPaddleInfo.size, tileH, 310, 10, tileW * smallPaddleInfo.size, tileH)
+
+    let mediumPaddleInfo = paddleMap.get(PaddleColor.BLUE)?.get(PaddleSize.MEDIUM)
+
+    if (mediumPaddleInfo == undefined) {
+        throw "is undefined"
+    }
+
+    ctx.drawImage(sprites["elements"], tileW * mediumPaddleInfo.info.x, tileH * mediumPaddleInfo.info.y, tileW * mediumPaddleInfo.size, tileH, 310, 44, tileW * mediumPaddleInfo.size, tileH)
+
+    let bigPaddleInfo = paddleMap.get(PaddleColor.BLUE)?.get(PaddleSize.BIG)
+
+    if (bigPaddleInfo == undefined) {
+        throw "is undefined"
+    }
+
+    ctx.drawImage(sprites["elements"], tileW * bigPaddleInfo.info.x, tileH * bigPaddleInfo.info.y, tileW * bigPaddleInfo.size, tileH, 310, 75, tileW * bigPaddleInfo.size, tileH)
+
+    let jumboPaddleInfo = paddleMap.get(PaddleColor.BLUE)?.get(PaddleSize.JUMBO)
+
+    if (jumboPaddleInfo == undefined) {
+        throw "is undefined"
+    }
+
+    ctx.drawImage(sprites["elements"], tileW * jumboPaddleInfo.info.x, tileH * jumboPaddleInfo.info.y, tileW * jumboPaddleInfo.size, tileH, 278, 200, tileW * jumboPaddleInfo.size, tileH)
 }
+
+const smallPaddleW = 1;
+const mediumPaddleW = 2;
+const bigPaddleW = 3;
+const jumboPaddleW = 4
 
 let elapsed = 0
 const waitingTime = .5
+
+let brickIndex = 0
+
+let elementIndex = 0
 
 function update(dt: number) {
     elapsed += dt;
     if (elapsed > waitingTime) {
         elapsed -= waitingTime
-        col++
-        if (col >= elementsPerRow) {
-            col = 0;
-            row ++
+        brickIndex++
+        if (brickIndex >= bricksPositions.length) {
+            console.log("reset brick index", brickIndex)
+            brickIndex = 0;
         }
-        if (row >= elementsPerCol) {
-            row = 0;
-            col = 0;
+
+
+        elementIndex++
+        if (elementIndex >= tilesInfos.length) {
+
+            elementIndex = 0
+
         }
     }
+}
+
+
+function tilePositions(nbRows: number, nbCols: number): TileInfo[] {
+
+    const res = []
+    for (let row = 0; row < nbRows; row++) {
+
+        for (let col = 0; col < nbCols; col++) {
+            res.push({x: col, y: row})
+        }
+    }
+
+    return res
 }
 
 function processInput() {
