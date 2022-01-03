@@ -36,6 +36,7 @@ adjustCanvasForDisplay(ctx, W, H);
 document.querySelector("#root")?.appendChild(canvas);
 
 const images: { [index: string]: HTMLImageElement } = {};
+const sprites: { [index: string]: HTMLImageElement } = {};
 
 main();
 
@@ -64,13 +65,24 @@ enum State {
     TITLE,
 }
 
+let elementsPerRow: number
+let elementsPerCol: number
+
+let col = 0
+let row = 10
+
+const tileW = 32;
+const tileH = 16;
+
 async function main() {
   images["background"] = await loadImage("img/background.png");
-//   images["ground"] = await loadImage("ground.png");
-//   images["bird"] = await loadImage("bird.png");
-//   images["pipe"] = await loadImage("pipe.png");
 
+  sprites["elements"] = await loadImage("sprite/brick-paddle-ball.png")
 
+  elementsPerCol = sprites["elements"].height / tileH - 2; // there is unused space in the image
+  elementsPerRow = sprites["elements"].width / tileW;
+
+  console.log(elementsPerRow, elementsPerCol)
   setDraw(draw);
   setUpdate(update);
   setProcessInput(processInput);
@@ -103,11 +115,28 @@ function draw() {
     height += 20*1.5
     const text2 = "High Score"
     ctx.fillText(text2, W/2 - (ctx.measureText(text2).width / 2), height)
+
+
+    ctx.drawImage(sprites["elements"], tileW * col, tileH * row, tileW, tileH, 10, 10, tileW, tileH)
 }
 
+let elapsed = 0
+const waitingTime = .5
 
 function update(dt: number) {
-
+    elapsed += dt;
+    if (elapsed > waitingTime) {
+        elapsed -= waitingTime
+        col++
+        if (col >= elementsPerRow) {
+            col = 0;
+            row ++
+        }
+        if (row >= elementsPerCol) {
+            row = 0;
+            col = 0;
+        }
+    }
 }
 
 function processInput() {
