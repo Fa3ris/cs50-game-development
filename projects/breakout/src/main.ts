@@ -114,44 +114,59 @@ async function main() {
   tilesInfos = tilePositions(nbRows, nbCols)
   bricksPositions =tilesInfos.slice(0, nBrickTiles)
 
-  bluePaddlePositions = tilesInfos.slice(24, 24 + 12)
+  let multiplier = 1
+  bluePaddlePositions = tilesInfos.slice(24, 24 + 12 * multiplier)
+  console.log("blue", multiplier)
+  console.log('blue length', bluePaddlePositions.length)
+  let greenPaddlePositions = tilesInfos.slice(24 + 12 * multiplier, 24 + 12 * (++multiplier))
+  console.log("green", multiplier)
+  console.log('green length', greenPaddlePositions.length)
+  let redPaddlePositions = tilesInfos.slice(24 + 12 * multiplier, 24 + 12 * (++multiplier))
+  console.log("red", multiplier)
+  console.log('red length', redPaddlePositions.length)
+  let purplePaddlePositions = tilesInfos.slice(24 + 12 * multiplier, 24 + 12 * (++multiplier))
+  console.log("purple", multiplier)
+  console.log('purple length', purplePaddlePositions.length)
 
-  const bluePaddleInfo = new Map<PaddleSize, {info: TileInfo, size: number}>()
+//   const bluePaddleInfo = new Map<PaddleSize, {info: TileInfo, size: number}>()
 
-  bluePaddleInfo.set(PaddleSize.SMALL, {
-      info: {
-          x: bluePaddlePositions[0].x,
-          y: bluePaddlePositions[0].y
-      },
-      size: smallPaddleW
-  })
+//   bluePaddleInfo.set(PaddleSize.SMALL, {
+//       info: {
+//           x: bluePaddlePositions[0].x,
+//           y: bluePaddlePositions[0].y
+//       },
+//       size: smallPaddleW
+//   })
 
-  bluePaddleInfo.set(PaddleSize.MEDIUM, {
-    info: {
-        x: bluePaddlePositions[smallPaddleW].x,
-        y: bluePaddlePositions[smallPaddleW].y
-    },
-    size: mediumPaddleW
-})
+//   bluePaddleInfo.set(PaddleSize.MEDIUM, {
+//     info: {
+//         x: bluePaddlePositions[smallPaddleW].x,
+//         y: bluePaddlePositions[smallPaddleW].y
+//     },
+//     size: mediumPaddleW
+// })
 
-bluePaddleInfo.set(PaddleSize.BIG, {
-    info: {
-        x: bluePaddlePositions[smallPaddleW + mediumPaddleW].x,
-        y: bluePaddlePositions[smallPaddleW + mediumPaddleW].y
-    },
-    size: bigPaddleW
-})
+// bluePaddleInfo.set(PaddleSize.BIG, {
+//     info: {
+//         x: bluePaddlePositions[smallPaddleW + mediumPaddleW].x,
+//         y: bluePaddlePositions[smallPaddleW + mediumPaddleW].y
+//     },
+//     size: bigPaddleW
+// })
 
 
-    bluePaddleInfo.set(PaddleSize.JUMBO, {
-        info: {
-            x: bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].x,
-            y: bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].y
-        },
-        size: jumboPaddleW
-    })
+//     bluePaddleInfo.set(PaddleSize.JUMBO, {
+//         info: {
+//             x: bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].x,
+//             y: bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].y
+//         },
+//         size: jumboPaddleW
+//     })
 
-    paddleMap.set(PaddleColor.BLUE, bluePaddleInfo)
+    paddleMap.set(PaddleColor.BLUE, generatePaddleMap(bluePaddlePositions))
+    paddleMap.set(PaddleColor.GREEN, generatePaddleMap(greenPaddlePositions))
+    paddleMap.set(PaddleColor.RED, generatePaddleMap(redPaddlePositions))
+    paddleMap.set(PaddleColor.PURPLE, generatePaddleMap(purplePaddlePositions))
 
 
 
@@ -174,6 +189,46 @@ bluePaddleInfo.set(PaddleSize.BIG, {
   setProcessInput(processInput);
 
   start();
+}
+
+
+function generatePaddleMap(tileInfo: TileInfo[]) {
+    const res = new Map<PaddleSize, {info: TileInfo, size: number}>()
+
+    res.set(PaddleSize.SMALL, {
+        info: {
+            x: tileInfo[0].x,
+            y: tileInfo[0].y
+        },
+        size: smallPaddleW
+    })
+  
+    res.set(PaddleSize.MEDIUM, {
+      info: {
+          x: tileInfo[smallPaddleW].x,
+          y: tileInfo[smallPaddleW].y
+      },
+      size: mediumPaddleW
+  })
+  
+  res.set(PaddleSize.BIG, {
+      info: {
+          x: tileInfo[smallPaddleW + mediumPaddleW].x,
+          y: tileInfo[smallPaddleW + mediumPaddleW].y
+      },
+      size: bigPaddleW
+  })
+  
+  
+      res.set(PaddleSize.JUMBO, {
+          info: {
+              x: tileInfo[smallPaddleW + mediumPaddleW + bigPaddleW].x,
+              y: tileInfo[smallPaddleW + mediumPaddleW + bigPaddleW].y
+          },
+          size: jumboPaddleW
+      })
+  
+return res
 }
 
 let titleSelectHighlightedIndex = 0
