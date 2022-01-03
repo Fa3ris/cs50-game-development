@@ -9,7 +9,8 @@
     "build": "tsc",
     "start": "parcel",
     "start-flappy": "cp -R projects/flappy-bird/static/* dist/flappy-bird && parcel projects/flappy-bird/index.html --dist-dir dist/flappy-bird",
-    "start-pong": "cp -R projects/pong/static/* dist/pong && parcel projects/pong/index.html --dist-dir dist/pong"
+    "start-pong": "cp -R projects/pong/static/* dist/pong && parcel projects/pong/index.html --dist-dir dist/pong",
+    "start-breakout": "cp -R projects/breakout/static/* dist/breakout && parcel projects/breakout/index.html --dist-dir dist/breakout"
   },
   "keywords": [],
   "author": "",
