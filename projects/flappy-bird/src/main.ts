@@ -38,6 +38,12 @@ const bird = {
 let bestScore = 0;
 let score = 0;
 
+const explosionSound = new Audio("flappy-bird_explosion.wav");
+const hurtSound = new Audio("flappy-bird_hurt.wav");
+const jumpSound = new Audio("flappy-bird_jump.wav");
+const scoreSound = new Audio("flappy-bird_score.wav");
+
+
 let canvas = document.querySelector("canvas");
 if (!canvas) {
   canvas = document.createElement("canvas");
@@ -293,6 +299,7 @@ function update(dt: number) {
         if (bird.jump) {
           bird.jump = false
           bird.dy = impulse;
+          jumpSound.play()
         }
         bird.yPos += bird.dy
 
@@ -314,6 +321,7 @@ function update(dt: number) {
             if (!pair.scored) {
                 pair.scored = true;
                 score++ 
+                scoreSound.play()
             }
 
             continue // pipe is passed no need to check collision
@@ -350,6 +358,8 @@ function update(dt: number) {
 
         if (collideLow || collideUpper || collideBottomScreen || collideTopScreen) {
             gameState = State.SCORE_SCREEN
+            hurtSound.play()
+            explosionSound.play()
             bestScore = Math.max(bestScore, score)
         }
   }
