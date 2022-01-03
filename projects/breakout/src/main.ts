@@ -15,6 +15,22 @@ const ctx: CanvasRenderingContext2D = canvas.getContext(
   "2d"
 ) as CanvasRenderingContext2D;
 
+const mainMusic = new Audio("sound/music.wav");
+mainMusic.loop = true;
+mainMusic.volume = 0
+
+
+const eventsStartingMainMusic = ["click", "keydown",]
+
+for (const iterator of eventsStartingMainMusic) {
+    document.addEventListener(iterator, function(e) {
+        if (mainMusic.paused) {
+            console.log("begin play for event", e)
+            mainMusic.play()
+        }
+    }, {once: true})
+}
+
 adjustCanvasForDisplay(ctx, W, H);
 
 document.querySelector("#root")?.appendChild(canvas);
@@ -28,6 +44,12 @@ const keys: {[index: string]: boolean } = {}
 
 
 document.addEventListener("keydown", function(e) {
+
+    if (e.key === "Alt") { // seems that no keyup is fired for alt key
+        console.log("ignore alt")
+        return
+    }
+
     if (keys[e.key] == undefined) {
         keys[e.key] = false
     }
@@ -90,4 +112,23 @@ function update(dt: number) {
 
 function processInput() {
 
+    if (Object.keys(keys).length > 0) {
+
+        if (keys["ArrowUp"] == false) {
+            keys["ArrowUp"] = true // do not process it again
+            titleSelectHighlightedIndex--
+            if (titleSelectHighlightedIndex < 0) {
+                titleSelectHighlightedIndex = 1;
+            }
+           
+        }
+        
+        if (keys["ArrowDown"] == false) {
+            keys["ArrowDown"] = true // do not process it again
+            titleSelectHighlightedIndex++
+            if (titleSelectHighlightedIndex > 1) {
+                titleSelectHighlightedIndex = 0;
+            }
+        }
+    }
 }
