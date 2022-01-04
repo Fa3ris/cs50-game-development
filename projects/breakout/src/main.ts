@@ -2,24 +2,16 @@ import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { loadImage } from "~common/image-utils";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { init as initSprites, drawBrick, drawPaddle, drawElement, PaddleColor, PaddleSize, nBrickTiles, nTiles} from "./tile-renderer"
+import { update as stateUpdate, processInput as stateProcessInput, draw as stateDraw, enterState, GameState } from './state-machine'
 
 /* CANVAS */
 const W = 432;
 const H = 243;
 
-let canvas = document.querySelector("canvas");
-if (!canvas) {
-  canvas = document.createElement("canvas");
-}
-
-const ctx: CanvasRenderingContext2D = canvas.getContext(
-  "2d"
-) as CanvasRenderingContext2D;
 
 const mainMusic = new Audio("sound/music.wav");
 mainMusic.loop = true;
 mainMusic.volume = 0
-
 
 const eventsStartingMainMusic = ["click", "keydown",]
 
@@ -32,17 +24,14 @@ for (const iterator of eventsStartingMainMusic) {
     }, {once: true})
 }
 
-adjustCanvasForDisplay(ctx, W, H);
+const ctx = getRenderingContext()
 
-document.querySelector("#root")?.appendChild(canvas);
+document.querySelector("#root")?.appendChild(ctx.canvas);
 
 const images: { [index: string]: HTMLImageElement } = {};
-
-main();
-
-
 const keys: {[index: string]: boolean } = {}
 
+main();
 
 document.addEventListener("keydown", function(e) {
 
@@ -61,14 +50,6 @@ document.addEventListener("keyup", function(e) {
 })
 
 
-enum State {
-    TITLE,
-}
-
-const tileW = 32;
-const tileH = 16;
-
-
 async function main() {
   images["background"] = await loadImage("img/background.png");
 
@@ -78,11 +59,12 @@ async function main() {
   setUpdate(update);
   setProcessInput(processInput);
 
+  enterState(GameState.TITLE)
+
   start();
 }
 
 
-let titleSelectHighlightedIndex = 0
 
 function draw() {
 
@@ -93,21 +75,11 @@ function draw() {
     0, 0, images["background"].width, images["background"].height,
     0, 0, W, H)
 
-    const title = "BREAKOUT"
-    ctx.font = "40px/1.5 breakout-font"
-    ctx.fillStyle = "white"
-    let height = H/2
-    ctx.fillText(title, W/2 - (ctx.measureText(title).width / 2), height)
-    ctx.font = "20px breakout-font"
-    ctx.fillStyle = titleSelectHighlightedIndex == 0 ? "aqua" : "white";
-    height += 50
-    const text1 = "Start"
-    ctx.fillText(text1, W/2 - (ctx.measureText(text1).width / 2), height)
-    ctx.fillStyle = titleSelectHighlightedIndex == 1 ? "aqua" : "white";
-    height += 20*1.5
-    const text2 = "High Score"
-    ctx.fillText(text2, W/2 - (ctx.measureText(text2).width / 2), height)
 
+    stateDraw()
+
+    const tileW = 32;
+    const tileH = 16;
 
     const brickPosX = 10
     const brickPosY = 10
@@ -139,6 +111,8 @@ let brickIndex = 0
 let elementIndex = 0
 
 function update(dt: number) {
+
+    stateUpdate(dt)
     elapsed += dt;
     if (elapsed > waitingTime) {
         elapsed -= waitingTime
@@ -160,22 +134,29 @@ function update(dt: number) {
 function processInput() {
 
     if (Object.keys(keys).length > 0) {
-
-        if (keys["ArrowUp"] == false) {
-            keys["ArrowUp"] = true // do not process it again
-            titleSelectHighlightedIndex--
-            if (titleSelectHighlightedIndex < 0) {
-                titleSelectHighlightedIndex = 1;
-            }
-           
-        }
-        
-        if (keys["ArrowDown"] == false) {
-            keys["ArrowDown"] = true // do not process it again
-            titleSelectHighlightedIndex++
-            if (titleSelectHighlightedIndex > 1) {
-                titleSelectHighlightedIndex = 0;
-            }
-        }
+        stateProcessInput()
     }
 }
+
+
+function getRenderingContext(): CanvasRenderingContext2D {
+    let canvas = document.querySelector("canvas");
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+    }
+
+    const ctx: CanvasRenderingContext2D = canvas.getContext(
+      "2d"
+    ) as CanvasRenderingContext2D;
+    adjustCanvasForDisplay(ctx, W, H);
+
+    return ctx;
+}
+
+export {
+    W,
+    H,
+    ctx,
+    images,
+    keys
+};

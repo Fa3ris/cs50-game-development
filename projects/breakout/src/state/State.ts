@@ -5,10 +5,3 @@ export type State = {
     processInput(): void
     exit(): void,
 }
-
-
-export type StateConfig = {
-    ctx?: CanvasRenderingContext2D,
-    keys?: {[index: string]: boolean },
-    images?: { [index: string]: HTMLImageElement },
-}

@@ -1,4 +1,4 @@
-import { State, StateConfig } from "./state/State";
+import { State } from "./state/State";
 import { gameTitle } from "./state/game-title";
 
 export enum GameState {
@@ -8,16 +8,7 @@ export enum GameState {
 let currentState: State
 
 
-let stateConfig: StateConfig = {};
-
-
-function setConfig(config: StateConfig = {}) {
-    stateConfig = config;
-
-    stateConfig["ctx"] = undefined
-}
-
-function enterState(newState: GameState): State {
+export function enterState(newState: GameState): State {
 
     if (currentState) { currentState.exit(); }
 
@@ -36,14 +27,14 @@ function enterState(newState: GameState): State {
     return currentState
 }
 
-function update(dt: number) {
+export function update(dt: number) {
     currentState.update(dt)
 }
 
-function draw() {
+export function draw() {
     currentState.draw()
 }
 
-function processInput() {
+export function processInput() {
     currentState.processInput()
 }
