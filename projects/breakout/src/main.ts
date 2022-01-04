@@ -1,7 +1,7 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { loadImage } from "~common/image-utils";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
-import { init as initSprites, drawBrick, drawPaddle, drawElement, PaddleColor, PaddleSize, nBrickTiles, nTiles} from "./tile-renderer"
+import { init as initSprites, drawBrick, drawPaddle, drawElement, PaddleColor, PaddleSize, nBrickTiles, nTiles, drawBall, nBalls} from "./tile-renderer"
 import { update as stateUpdate, processInput as stateProcessInput, draw as stateDraw, enterState, GameState } from './state-machine'
 
 /* CANVAS */
@@ -97,6 +97,11 @@ function draw() {
     drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.MEDIUM, 310, 44)
     drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.BIG, 310, 75)
     drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.JUMBO, 150, 210)
+
+    // ballIndex = 6
+    drawBall(ctx, ballIndex, 150, 132)
+
+    ctx.fillText(`${ballIndex}`, 150 - 30, 132 + 10)
 }
 
 let elapsed = 0
@@ -105,6 +110,8 @@ const waitingTime = .5
 let brickIndex = 0
 
 let elementIndex = 0
+
+let ballIndex = 0
 
 function update(dt: number) {
 
@@ -122,6 +129,11 @@ function update(dt: number) {
         elementIndex++
         if (elementIndex >= nTiles) {
             elementIndex = 0
+        }
+
+        ballIndex++
+        if (ballIndex >= nBalls) {
+            ballIndex = 0
         }
     }
 }

@@ -95,7 +95,7 @@ export function drawPaddle(ctx: CanvasRenderingContext2D, color: PaddleColor, si
 }
 
 export function drawBrick(ctx: CanvasRenderingContext2D, index: number, x: number, y: number) {
-    if (index > nBrickTiles - 1) { throw `invalid index ${index}` }
+    if (index >= nBrickTiles) { throw `invalid index ${index}` }
     ctx.drawImage(sprites["elements"],
      elementsTileW * bricksPositions[index].x, elementsTileH * bricksPositions[index].y, elementsTileW, elementsTileH,
       x, y, elementsTileW, elementsTileH)
@@ -107,6 +107,31 @@ export function drawElement(ctx: CanvasRenderingContext2D, index: number, x: num
      elementsTileW * tilesInfos[index].x, elementsTileH * tilesInfos[index].y, elementsTileW, elementsTileH,
       x, y, elementsTileW, elementsTileH)
 
+}
+
+export const ballDim = 8
+
+export const nBalls = 7
+
+export function drawBall(ctx: CanvasRenderingContext2D, index: number, x: number, y: number) {
+  if (index >= nBalls) { throw `invalid index ${index}`}
+
+  const xIndex = index % 4
+  const yIndex = Math.floor(index / 4)
+  const xBallOffset = xIndex * ballDim
+  const yBallOffset = yIndex * ballDim 
+  const xSheetOffset = tilesInfos[21].x * elementsTileW + xBallOffset
+  const ySheetOffset = tilesInfos[21].y * elementsTileH + yBallOffset
+  
+  console.log('x ball offset', xBallOffset)
+  console.log('xoffset', xSheetOffset)
+  console.log('y ball offset', yBallOffset)
+  console.log('yoffset', ySheetOffset)
+
+
+  ctx.drawImage(sprites["elements"],
+  xSheetOffset, ySheetOffset, ballDim, ballDim,
+   x, y, ballDim, ballDim)
 }
 
 function _tilePositions(nbRows: number, nbCols: number): TileInfo[] {
@@ -158,4 +183,3 @@ function _generatePaddleMap(tileInfo: TileInfo[]) {
 
   return res;
 }
-
