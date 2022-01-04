@@ -1,5 +1,5 @@
 import { ctx, H, keys, W } from "../main";
-import { drawPaddle, elementsTileW, elementsTileH, PaddleColor, PaddleSize, ballDim, drawBall } from "../tile-renderer";
+import { drawPaddle, elementsTileW, elementsTileH, PaddleColor, PaddleSize, ballDim, drawBall, drawBrick } from "../tile-renderer";
 import { State } from "./State";
 
 
@@ -18,6 +18,8 @@ type Paddle = {
 let paddle: Paddle
 
 let serveState = true;
+
+const bricks: BrickInfo[][] = []
 
 type Ball = {
     w: number,
@@ -54,6 +56,11 @@ export const play: State = {
             dx: 0,
             dy: 0
         }
+
+
+        const rowGap = 6
+        bricks.push(generateBrickRow(3, 100, 8))
+        bricks.push(generateBrickRow(5, 100 + elementsTileH + rowGap, 8))
     },
 
     update: function (dt: number): void {
@@ -72,14 +79,22 @@ export const play: State = {
 
     draw: function (): void {
         drawPaddle(ctx, paddle.color, paddle.size, paddle.x, paddle.y)
-        drawBall(ctx, ball.index, ball.x, ball.y)
+        
 
+        for (const brickRow of bricks) {
+            for (const brick of brickRow) {
+                drawBrick(ctx, brick.index, brick.x, brick.y)
+            }
+        }
+
+        drawBall(ctx, ball.index, ball.x, ball.y)
     },
 
 
     processInput: function (): void {
 
         if (keys["ArrowRight"] != undefined) {
+            keys["ArrowRight"] = true
             paddle.dx += paddleSpeed
            
         }
@@ -102,7 +117,7 @@ export const play: State = {
 
 
     exit: function (): void {
-        console.log('enter play')
+        console.log('exit play')
     }
 }
 
@@ -160,4 +175,41 @@ function collisionAABB(x1: number, y1: number, w1: number, h1: number, x2: numbe
     y1 < y2 + h2 &&
     h1 + y1 > y2;
   return collisionDetected;
+}
+
+
+type BrickInfo = {
+    x: number,
+    y: number,
+    life: number,
+    index: number
+}
+
+
+function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] {
+    const res: BrickInfo[] = [];
+    const totalW =  (n * elementsTileW) + ((n - 1) * columnGap);
+
+    let x = (W - totalW) / 2
+
+    for (let index = 0; index < n; index++) {
+
+        res.push({
+            x,
+            y,
+            index: 0,
+            life: 1
+        })
+
+        x += elementsTileW
+
+        if (index < (n - 1)) {
+            x += columnGap
+        }
+        
+    }
+
+
+    return res
+
 }

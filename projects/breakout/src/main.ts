@@ -79,12 +79,18 @@ async function main() {
 function draw() {
 
     ctx.clearRect(0, 0, W, H)
-    debugCtx.clearRect(0, 0, W, H)
-
+    
     ctx.drawImage(images["background"], 0, 0, W + 10, H + 10); // add extra dimensions, else image is not filling entire canvas
-
     stateDraw()
+    
+    drawDebug()
 
+}
+
+
+function drawDebug() {
+
+    debugCtx.clearRect(0, 0, W, H)
     const tileW = 32;
     const tileH = 16;
 
@@ -109,12 +115,12 @@ function draw() {
     drawPaddle(debugCtx, PaddleColor.BLUE, PaddleSize.BIG, 310, 75)
     drawPaddle(debugCtx, PaddleColor.BLUE, PaddleSize.JUMBO, 150, 150)
 
-    // ballIndex = 6
     drawBall(debugCtx, ballIndex, 150, 132)
 
     debugCtx.fillStyle = "black"
     debugCtx.font = "20px breakout-font"
     debugCtx.fillText(`${ballIndex}`, 150 - 30, 132 + 10)
+
 }
 
 let elapsed = 0
