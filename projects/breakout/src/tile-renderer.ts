@@ -8,10 +8,10 @@ export enum PaddleColor {
 }
 
 export enum PaddleSize {
-  SMALL,
-  MEDIUM,
-  BIG,
-  JUMBO,
+  SMALL = 1,
+  MEDIUM = 2,
+  BIG = 3,
+  JUMBO = 4,
 }
 
 export type TileInfo = {
@@ -32,15 +32,15 @@ const jumboPaddleW = 4;
 
 const sprites: { [index: string]: HTMLImageElement } = {};
 
-const elementsTileW = 32;
-const elementsTileH = 16;
+export const elementsTileW = 32;
+export const elementsTileH = 16;
 
 let tilesInfos: TileInfo[]
+export const nTiles = 84
 
 let bricksPositions: TileInfo[]
 export const nBrickTiles = 21
 
-export const nTiles = 84
 
 export async function init() {
   sprites["elements"] = await loadImage("sprite/brick-paddle-ball.png");

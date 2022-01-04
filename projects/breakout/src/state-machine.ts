@@ -1,8 +1,11 @@
 import { State } from "./state/State";
 import { gameTitle } from "./state/game-title";
+import { play } from "./state/play";
 
 export enum GameState {
     TITLE,
+    PLAY,
+    HIGHSCORE
 }
 
 let currentState: State
@@ -13,10 +16,13 @@ export function enterState(newState: GameState): State {
     if (currentState) { currentState.exit(); }
 
     switch(newState) {
-        case GameState.TITLE: {
+        case GameState.TITLE:
             currentState = gameTitle
             break
-        }
+
+        case GameState.PLAY:
+        currentState = play
+        break
 
         default:
             throw 'unknown state'

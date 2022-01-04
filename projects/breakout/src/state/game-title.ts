@@ -1,4 +1,5 @@
 import { ctx, H, keys, W } from "../main";
+import { enterState, GameState } from "../state-machine";
 import { State } from "./State";
 
 
@@ -12,6 +13,7 @@ const selectedColor = "aqua"
 export const gameTitle: State = {
 
     enter: function (): void {
+        console.log('enter title')
     },
 
 
@@ -57,9 +59,20 @@ export const gameTitle: State = {
                 titleSelectHighlightedIndex = 0;
             }
         }
+
+        if (keys["Enter"] == false) {
+            keys["Enter"] = true
+
+            if (titleSelectHighlightedIndex == 0) {
+                enterState(GameState.PLAY)
+            } else {
+                console.log('title -> high score')
+
+            }
+        }
     },
 
     exit: function (): void {
-        throw new Error("Function not implemented.");
+        console.debug("exit title")
     }
 }

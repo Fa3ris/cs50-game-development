@@ -70,11 +70,7 @@ function draw() {
 
     ctx.clearRect(0, 0, W, H)
 
-    // scale image
-    ctx.drawImage(images["background"], 
-    0, 0, images["background"].width, images["background"].height,
-    0, 0, W, H)
-
+    ctx.drawImage(images["background"], 0, 0, W + 10, H + 10); // add extra dimensions, else image is not filling entire canvas
 
     stateDraw()
 
