@@ -26,7 +26,10 @@ for (const iterator of eventsStartingMainMusic) {
 
 const ctx = getRenderingContext()
 
+const debugCtx = debugRenderingContext()
+
 document.querySelector("#root")?.appendChild(ctx.canvas);
+document.querySelector("#root")?.appendChild(debugCtx.canvas);
 
 const images: { [index: string]: HTMLImageElement } = {};
 const keys: {[index: string]: boolean } = {}
@@ -49,6 +52,13 @@ document.addEventListener("keyup", function(e) {
     delete keys[e.key]
 })
 
+window.addEventListener('keydown', function(e) {
+    if(e.key === " " && e.target == document.body) {
+      console.log("prevent scrolling")
+      e.preventDefault();
+    }
+  });
+
 
 async function main() {
   images["background"] = await loadImage("img/background.png");
@@ -69,6 +79,7 @@ async function main() {
 function draw() {
 
     ctx.clearRect(0, 0, W, H)
+    debugCtx.clearRect(0, 0, W, H)
 
     ctx.drawImage(images["background"], 0, 0, W + 10, H + 10); // add extra dimensions, else image is not filling entire canvas
 
@@ -80,28 +91,30 @@ function draw() {
     const brickPosX = 10
     const brickPosY = 10
 
-    ctx.strokeStyle = "red"
-    ctx.strokeRect(brickPosX, brickPosY, tileW, tileH)
+    debugCtx.strokeStyle = "red"
+    debugCtx.strokeRect(brickPosX, brickPosY, tileW, tileH)
 
-    drawBrick(ctx, brickIndex, brickPosX, brickPosY)
+    drawBrick(debugCtx, brickIndex, brickPosX, brickPosY)
 
     const elementPosX = 60
     const elementPosY = 10
     
-    ctx.strokeRect(elementPosX, elementPosY, tileW, tileH)
+    debugCtx.strokeRect(elementPosX, elementPosY, tileW, tileH)
 
 
-    drawElement(ctx, elementIndex, elementPosX, elementPosY)
+    drawElement(debugCtx, elementIndex, elementPosX, elementPosY)
 
-    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.SMALL, 310, 10)
-    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.MEDIUM, 310, 44)
-    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.BIG, 310, 75)
-    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.JUMBO, 150, 150)
+    drawPaddle(debugCtx, PaddleColor.BLUE, PaddleSize.SMALL, 310, 10)
+    drawPaddle(debugCtx, PaddleColor.BLUE, PaddleSize.MEDIUM, 310, 44)
+    drawPaddle(debugCtx, PaddleColor.BLUE, PaddleSize.BIG, 310, 75)
+    drawPaddle(debugCtx, PaddleColor.BLUE, PaddleSize.JUMBO, 150, 150)
 
     // ballIndex = 6
-    drawBall(ctx, ballIndex, 150, 132)
+    drawBall(debugCtx, ballIndex, 150, 132)
 
-    ctx.fillText(`${ballIndex}`, 150 - 30, 132 + 10)
+    debugCtx.fillStyle = "black"
+    debugCtx.font = "20px breakout-font"
+    debugCtx.fillText(`${ballIndex}`, 150 - 30, 132 + 10)
 }
 
 let elapsed = 0
@@ -153,6 +166,20 @@ function getRenderingContext(): CanvasRenderingContext2D {
       canvas = document.createElement("canvas");
     }
 
+    const ctx: CanvasRenderingContext2D = canvas.getContext(
+      "2d"
+    ) as CanvasRenderingContext2D;
+    adjustCanvasForDisplay(ctx, W, H);
+
+    return ctx;
+}
+
+function debugRenderingContext(): CanvasRenderingContext2D {
+    let canvas: HTMLCanvasElement = document.querySelector(".debug-canvas") as HTMLCanvasElement;
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+      canvas.classList.add("debug-canvas")
+    }
     const ctx: CanvasRenderingContext2D = canvas.getContext(
       "2d"
     ) as CanvasRenderingContext2D;
