@@ -1,6 +1,7 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { loadImage } from "~common/image-utils";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
+import { init as initSprites, drawBrick, drawPaddle, drawElement, PaddleColor, PaddleSize, nBrickTiles, nTiles} from "./tile-renderer"
 
 /* CANVAS */
 const W = 432;
@@ -36,7 +37,6 @@ adjustCanvasForDisplay(ctx, W, H);
 document.querySelector("#root")?.appendChild(canvas);
 
 const images: { [index: string]: HTMLImageElement } = {};
-const sprites: { [index: string]: HTMLImageElement } = {};
 
 main();
 
@@ -65,124 +65,14 @@ enum State {
     TITLE,
 }
 
-let nbCols: number
-let nbRows: number
-
-let col = 0
-let row = 10
-
 const tileW = 32;
 const tileH = 16;
 
-const nBrickTiles = 21
-
-type TileInfo = {
-    x: number,
-    y: number,
-}
-let bricksPositions: TileInfo[]
-let tilesInfos: TileInfo[]
-
-let bluePaddlePositions: TileInfo[]
-
-enum PaddleColor {
-    BLUE,
-    GREEN,
-    RED,
-    PURPLE
-}
-
-enum PaddleSize {
-    SMALL,
-    MEDIUM,
-    BIG,
-    JUMBO
-}
-
-const paddleMap: Map<PaddleColor, Map<PaddleSize, {info: TileInfo, size: number}>> = new Map()
 
 async function main() {
   images["background"] = await loadImage("img/background.png");
 
-  sprites["elements"] = await loadImage("sprite/brick-paddle-ball.png")
-
-  nbRows = sprites["elements"].height / tileH - 2; // there is unused space in the image
-  nbCols = sprites["elements"].width / tileW;
-
-  console.log(nbCols, nbRows)
-
-  tilesInfos = tilePositions(nbRows, nbCols)
-  bricksPositions =tilesInfos.slice(0, nBrickTiles)
-
-  let multiplier = 1
-  bluePaddlePositions = tilesInfos.slice(24, 24 + 12 * multiplier)
-  console.log("blue", multiplier)
-  console.log('blue length', bluePaddlePositions.length)
-  let greenPaddlePositions = tilesInfos.slice(24 + 12 * multiplier, 24 + 12 * (++multiplier))
-  console.log("green", multiplier)
-  console.log('green length', greenPaddlePositions.length)
-  let redPaddlePositions = tilesInfos.slice(24 + 12 * multiplier, 24 + 12 * (++multiplier))
-  console.log("red", multiplier)
-  console.log('red length', redPaddlePositions.length)
-  let purplePaddlePositions = tilesInfos.slice(24 + 12 * multiplier, 24 + 12 * (++multiplier))
-  console.log("purple", multiplier)
-  console.log('purple length', purplePaddlePositions.length)
-
-//   const bluePaddleInfo = new Map<PaddleSize, {info: TileInfo, size: number}>()
-
-//   bluePaddleInfo.set(PaddleSize.SMALL, {
-//       info: {
-//           x: bluePaddlePositions[0].x,
-//           y: bluePaddlePositions[0].y
-//       },
-//       size: smallPaddleW
-//   })
-
-//   bluePaddleInfo.set(PaddleSize.MEDIUM, {
-//     info: {
-//         x: bluePaddlePositions[smallPaddleW].x,
-//         y: bluePaddlePositions[smallPaddleW].y
-//     },
-//     size: mediumPaddleW
-// })
-
-// bluePaddleInfo.set(PaddleSize.BIG, {
-//     info: {
-//         x: bluePaddlePositions[smallPaddleW + mediumPaddleW].x,
-//         y: bluePaddlePositions[smallPaddleW + mediumPaddleW].y
-//     },
-//     size: bigPaddleW
-// })
-
-
-//     bluePaddleInfo.set(PaddleSize.JUMBO, {
-//         info: {
-//             x: bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].x,
-//             y: bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].y
-//         },
-//         size: jumboPaddleW
-//     })
-
-    paddleMap.set(PaddleColor.BLUE, generatePaddleMap(bluePaddlePositions))
-    paddleMap.set(PaddleColor.GREEN, generatePaddleMap(greenPaddlePositions))
-    paddleMap.set(PaddleColor.RED, generatePaddleMap(redPaddlePositions))
-    paddleMap.set(PaddleColor.PURPLE, generatePaddleMap(purplePaddlePositions))
-
-
-
-   // small
-   ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[0].x, tileH * bluePaddlePositions[0].y, tileW * smallPaddleW, tileH, 10, 99, tileW * smallPaddleW, tileH)
-   // middle
-   ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW].x, tileH * bluePaddlePositions[smallPaddleW].y, tileW * mediumPaddleW, tileH, 10, 120, tileW * mediumPaddleW, tileH)
-
-   // big -- white line appears
-   ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW + mediumPaddleW].x, tileH * bluePaddlePositions[smallPaddleW + mediumPaddleW].y, tileW * bigPaddleW, tileH, 10, 150, tileW * bigPaddleW, tileH)
-   
-   // jumbo
-   ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].x, tileH * bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].y, tileW * jumboPaddleW, tileH, 10, 200, tileW * jumboPaddleW, tileH)
-
-
-  console.log("paddle blue", bluePaddlePositions)
+  await initSprites();
 
   setDraw(draw);
   setUpdate(update);
@@ -191,45 +81,6 @@ async function main() {
   start();
 }
 
-
-function generatePaddleMap(tileInfo: TileInfo[]) {
-    const res = new Map<PaddleSize, {info: TileInfo, size: number}>()
-
-    res.set(PaddleSize.SMALL, {
-        info: {
-            x: tileInfo[0].x,
-            y: tileInfo[0].y
-        },
-        size: smallPaddleW
-    })
-  
-    res.set(PaddleSize.MEDIUM, {
-      info: {
-          x: tileInfo[smallPaddleW].x,
-          y: tileInfo[smallPaddleW].y
-      },
-      size: mediumPaddleW
-  })
-  
-  res.set(PaddleSize.BIG, {
-      info: {
-          x: tileInfo[smallPaddleW + mediumPaddleW].x,
-          y: tileInfo[smallPaddleW + mediumPaddleW].y
-      },
-      size: bigPaddleW
-  })
-  
-  
-      res.set(PaddleSize.JUMBO, {
-          info: {
-              x: tileInfo[smallPaddleW + mediumPaddleW + bigPaddleW].x,
-              y: tileInfo[smallPaddleW + mediumPaddleW + bigPaddleW].y
-          },
-          size: jumboPaddleW
-      })
-  
-return res
-}
 
 let titleSelectHighlightedIndex = 0
 
@@ -263,67 +114,22 @@ function draw() {
 
     ctx.strokeStyle = "red"
     ctx.strokeRect(brickPosX, brickPosY, tileW, tileH)
-    ctx.drawImage(sprites["elements"], tileW * bricksPositions[brickIndex].x, tileH * bricksPositions[brickIndex].y, tileW, tileH, brickPosX, brickPosY, tileW, tileH)
+
+    drawBrick(ctx, brickIndex, brickPosX, brickPosY)
 
     const elementPosX = 60
     const elementPosY = 10
     
     ctx.strokeRect(elementPosX, elementPosY, tileW, tileH)
 
-    ctx.drawImage(sprites["elements"], tileW * tilesInfos[elementIndex].x, tileH * tilesInfos[elementIndex].y, tileW, tileH, elementPosX, elementPosY, tileW, tileH)
 
+    drawElement(ctx, elementIndex, elementPosX, elementPosY)
 
-    // draw paddle
-
-    // small
-    ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[0].x, tileH * bluePaddlePositions[0].y, tileW * smallPaddleW, tileH, 10, 99, tileW * smallPaddleW, tileH)
-    // middle
-    ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW].x, tileH * bluePaddlePositions[smallPaddleW].y, tileW * mediumPaddleW, tileH, 10, 120, tileW * mediumPaddleW, tileH)
-
-    // big -- white line appears
-    ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW + mediumPaddleW].x, tileH * bluePaddlePositions[smallPaddleW + mediumPaddleW].y, tileW * bigPaddleW, tileH, 10, 150, tileW * bigPaddleW, tileH)
-    
-    // jumbo
-    ctx.drawImage(sprites["elements"], tileW * bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].x, tileH * bluePaddlePositions[smallPaddleW + mediumPaddleW + bigPaddleW].y, tileW * jumboPaddleW, tileH, 10, 200, tileW * jumboPaddleW, tileH)
-
-
-    let smallPaddleInfo = paddleMap.get(PaddleColor.BLUE)?.get(PaddleSize.SMALL)
-
-    if (smallPaddleInfo == undefined) {
-        throw "is undefined"
-    }
-
-    ctx.drawImage(sprites["elements"], tileW * smallPaddleInfo.info.x, tileH * smallPaddleInfo.info.y, tileW * smallPaddleInfo.size, tileH, 310, 10, tileW * smallPaddleInfo.size, tileH)
-
-    let mediumPaddleInfo = paddleMap.get(PaddleColor.BLUE)?.get(PaddleSize.MEDIUM)
-
-    if (mediumPaddleInfo == undefined) {
-        throw "is undefined"
-    }
-
-    ctx.drawImage(sprites["elements"], tileW * mediumPaddleInfo.info.x, tileH * mediumPaddleInfo.info.y, tileW * mediumPaddleInfo.size, tileH, 310, 44, tileW * mediumPaddleInfo.size, tileH)
-
-    let bigPaddleInfo = paddleMap.get(PaddleColor.BLUE)?.get(PaddleSize.BIG)
-
-    if (bigPaddleInfo == undefined) {
-        throw "is undefined"
-    }
-
-    ctx.drawImage(sprites["elements"], tileW * bigPaddleInfo.info.x, tileH * bigPaddleInfo.info.y, tileW * bigPaddleInfo.size, tileH, 310, 75, tileW * bigPaddleInfo.size, tileH)
-
-    let jumboPaddleInfo = paddleMap.get(PaddleColor.BLUE)?.get(PaddleSize.JUMBO)
-
-    if (jumboPaddleInfo == undefined) {
-        throw "is undefined"
-    }
-
-    ctx.drawImage(sprites["elements"], tileW * jumboPaddleInfo.info.x, tileH * jumboPaddleInfo.info.y, tileW * jumboPaddleInfo.size, tileH, 278, 200, tileW * jumboPaddleInfo.size, tileH)
+    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.SMALL, 310, 10)
+    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.MEDIUM, 310, 44)
+    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.BIG, 310, 75)
+    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.JUMBO, 150, 210)
 }
-
-const smallPaddleW = 1;
-const mediumPaddleW = 2;
-const bigPaddleW = 3;
-const jumboPaddleW = 4
 
 let elapsed = 0
 const waitingTime = .5
@@ -337,34 +143,19 @@ function update(dt: number) {
     if (elapsed > waitingTime) {
         elapsed -= waitingTime
         brickIndex++
-        if (brickIndex >= bricksPositions.length) {
+        if (brickIndex >= nBrickTiles) {
             console.log("reset brick index", brickIndex)
             brickIndex = 0;
         }
 
 
         elementIndex++
-        if (elementIndex >= tilesInfos.length) {
-
+        if (elementIndex >= nTiles) {
             elementIndex = 0
-
         }
     }
 }
 
-
-function tilePositions(nbRows: number, nbCols: number): TileInfo[] {
-
-    const res = []
-    for (let row = 0; row < nbRows; row++) {
-
-        for (let col = 0; col < nbCols; col++) {
-            res.push({x: col, y: row})
-        }
-    }
-
-    return res
-}
 
 function processInput() {
 
