@@ -96,7 +96,7 @@ function draw() {
     drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.SMALL, 310, 10)
     drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.MEDIUM, 310, 44)
     drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.BIG, 310, 75)
-    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.JUMBO, 150, 210)
+    drawPaddle(ctx, PaddleColor.BLUE, PaddleSize.JUMBO, 150, 150)
 
     // ballIndex = 6
     drawBall(ctx, ballIndex, 150, 132)
