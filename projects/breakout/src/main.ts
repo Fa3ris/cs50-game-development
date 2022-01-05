@@ -1,6 +1,6 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { loadImage } from "~common/image-utils";
-import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
+import { setDraw, setProcessInput, setUpdate, start, step as loopStep} from "~common/loop";
 import { init as initSprites, drawBrick, drawPaddle, drawElement, PaddleColor, PaddleSize, nBrickTiles, nTiles, drawBall, nBalls} from "./tile-renderer"
 import { update as stateUpdate, processInput as stateProcessInput, draw as stateDraw, enterState, GameState } from './state-machine'
 
@@ -82,7 +82,7 @@ function draw() {
     
     ctx.drawImage(images["background"], 0, 0, W + 10, H + 10); // add extra dimensions, else image is not filling entire canvas
     stateDraw()
-    
+
     drawDebug()
 
 }
@@ -199,5 +199,6 @@ export {
     H,
     ctx,
     images,
-    keys
+    keys,
+    loopStep
 };

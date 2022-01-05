@@ -1,4 +1,4 @@
-import { ctx, H, keys, W } from "../main";
+import { ctx, H, keys, W, loopStep } from "../main";
 import { segmentsIntersect } from "../segment-intersection";
 import { drawPaddle, elementsTileW, elementsTileH, PaddleColor, PaddleSize, ballDim, drawBall, drawBrick } from "../tile-renderer";
 import { State } from "./State";
@@ -90,6 +90,9 @@ export const play: State = {
 
     update: function (dt: number): void {
 
+        // if (brickCollision) {
+        //     return
+        // } 
         updatePaddle(paddle, dt)
         updateBall(dt)
 
@@ -121,9 +124,8 @@ export const play: State = {
             const ballCenterX = ball.x + ballDim / 2
             const ballCenterY = ball.y + ballDim /2
             const magnitude = 20
-            const dt = 1 / 60;
             ctx.moveTo(ball.x, ball.y);
-            ctx.lineTo((ball.x + ball.dx * dt * magnitude)  , (ball.y + ball.dy * dt * magnitude));
+            ctx.lineTo((ball.x + ball.dx * loopStep * magnitude)  , (ball.y + ball.dy * loopStep * magnitude));
             ctx.stroke();
         }
 
@@ -131,12 +133,11 @@ export const play: State = {
         if (brickCollision) {
 
             const magnitude = 20
-            const dt = 1 / 60;
 
             line1X1 = ball.x
             line1Y1 = ball.y
-            line1X2 = ball.x + ball.dx * dt * magnitude
-            line1Y2 = ball.y + ball.dy * dt * magnitude
+            line1X2 = ball.x + ball.dx * loopStep * magnitude
+            line1Y2 = ball.y + ball.dy * loopStep * magnitude
 
             ctx.strokeStyle = "red"
             ctx.strokeRect(collidedBrickX, collidedBrickY, elementsTileW, elementsTileH)
@@ -228,6 +229,7 @@ function updateBall(dt: number) {
 
     checkCollideBorders()
 
+    // check brick collision
     for (const row of bricks) {
         for (const brick of row) {
 
@@ -254,6 +256,13 @@ function updateBall(dt: number) {
 
                 collidedBrickX = brick.x
                 collidedBrickY = brick.y
+
+                // bounce down
+                ball.x = pointX
+                ball.y = pointY + 1 // remove collision
+                ball.dy = -ball.dy
+
+
                 return
             }
 
@@ -269,8 +278,6 @@ function updateBall(dt: number) {
                 
             if (topIntersect) {
 
-
-
                 pointX = topIntersect.x
                 pointY = topIntersect.y
 
@@ -279,6 +286,12 @@ function updateBall(dt: number) {
 
                 collidedBrickX = brick.x
                 collidedBrickY = brick.y
+
+                // bounce up
+                ball.x = pointX
+                ball.y = pointY - 1 // remove collision
+                ball.dy = -ball.dy
+
                 return
             }
 
@@ -306,6 +319,12 @@ function updateBall(dt: number) {
 
                 collidedBrickX = brick.x
                 collidedBrickY = brick.y
+
+                // bounce left
+                ball.x = pointX - 1 // remove collision
+                ball.y = pointY
+                ball.dx = -ball.dx
+
                 return
             }
 
@@ -331,15 +350,17 @@ function updateBall(dt: number) {
 
                 collidedBrickX = brick.x
                 collidedBrickY = brick.y
+
+                // bounce right
+                ball.x = pointX + 1 // remove collision
+                ball.y = pointY 
+                ball.dx = -ball.dx
+
                 return
             }
-
         }
-
-        
-
-        
     }
+    // no collision detected
     brickCollision = false
 }
 

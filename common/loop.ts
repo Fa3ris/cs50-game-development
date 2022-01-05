@@ -26,7 +26,7 @@ export function setProcessInput(callback: () => void) {
 /**
  * one step time of an update in seconds
  */
-const step = 1 / 60;
+export const step = 1 / 60;
 const maxAccumulator = 10 * step;
 const limitFrame = false;
 const maxFrames = 100;
