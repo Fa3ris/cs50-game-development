@@ -38,6 +38,8 @@ const paddleSpeed = 10;
 
 let brickCollision = false
 
+let paddleCollision = false
+
 // collision drawings
 
 let line1X1: number
@@ -51,6 +53,7 @@ let line2Y3: number
 let line2X4: number
 let line2Y4: number
 
+// collision point
 let pointX: number
 let pointY: number
 
@@ -90,17 +93,18 @@ export const play: State = {
 
     update: function (dt: number): void {
 
-        // if (brickCollision) {
+        if (brickCollision) {
         //     return
-        // } 
+        } 
+
+        if (paddleCollision) {
+            // return
+        }
         updatePaddle(paddle, dt)
         updateBall(dt)
 
 
-        if (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, ball.x, ball.y, ball.w, ball.h)) {
-            ball.y = paddle.y - ballDim
-            ball.dy = -ball.dy
-        }
+        
 
     },
 
@@ -129,8 +133,17 @@ export const play: State = {
             ctx.stroke();
         }
 
-
         if (brickCollision) {
+            ctx.strokeStyle = "red"
+            ctx.strokeRect(collidedBrickX, collidedBrickY, elementsTileW, elementsTileH)
+        }
+
+        if (paddleCollision) {
+            ctx.strokeStyle = "red"
+            ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h)
+        }
+
+        if (brickCollision || paddleCollision) {
 
             const magnitude = 20
 
@@ -139,8 +152,6 @@ export const play: State = {
             line1X2 = ball.x + ball.dx * loopStep * magnitude
             line1Y2 = ball.y + ball.dy * loopStep * magnitude
 
-            ctx.strokeStyle = "red"
-            ctx.strokeRect(collidedBrickX, collidedBrickY, elementsTileW, elementsTileH)
 
             ctx.strokeStyle = "yellow"
             ctx.beginPath();
@@ -168,13 +179,13 @@ export const play: State = {
 
     processInput: function (): void {
 
-        if (keys["ArrowRight"] != undefined) {
+        if (keys["ArrowRight"] != undefined) { // can keep it pressed
             keys["ArrowRight"] = true
             paddle.dx += paddleSpeed
            
         }
         
-        if (keys["ArrowLeft"] != undefined) {
+        if (keys["ArrowLeft"] != undefined) { // can keep it pressed
             keys["ArrowLeft"] = true // do not process it again
             paddle.dx -= paddleSpeed;
         }
@@ -190,8 +201,9 @@ export const play: State = {
         }
 
         if (keys["p"] == false) {
-            keys["p"] = true
-            brickCollision = !brickCollision
+            keys["p"] = true // do not process again
+            brickCollision = false
+            paddleCollision = false
             console.log("toggle stop", brickCollision)
         }
     },
@@ -204,7 +216,7 @@ export const play: State = {
 }
 
 function updatePaddle(paddle: Paddle, dt: number) {
-    paddle.x += paddle.dx;
+    paddle.x += paddle.dx
 
     paddle.dx = 0
 
@@ -219,17 +231,18 @@ function updatePaddle(paddle: Paddle, dt: number) {
 
 function updateBall(dt: number) {
 
+    brickCollision = false
+    paddleCollision = false
+
     if (serveState) {
         ball.x = paddle.x + (paddle.w - ballDim) / 2,
         ball.y = paddle.y - ballDim
         return
     }
-    ball.x += ball.dx * dt
-    ball.y += ball.dy * dt
 
     checkCollideBorders()
 
-    // check brick collision
+    // check brick collision -- check only if ball above last row of bricks + some value
     for (const row of bricks) {
         for (const brick of row) {
 
@@ -251,7 +264,7 @@ function updateBall(dt: number) {
 
                 pointX = bottomIntersect.x
                 pointY = bottomIntersect.y
-                console.log("bottom", bottomIntersect)
+                console.log("bottom brick", bottomIntersect)
                 brickCollision = true
 
                 collidedBrickX = brick.x
@@ -281,7 +294,7 @@ function updateBall(dt: number) {
                 pointX = topIntersect.x
                 pointY = topIntersect.y
 
-                console.log('top', topIntersect)
+                console.log('top brick', topIntersect)
                 brickCollision = true
 
                 collidedBrickX = brick.x
@@ -314,7 +327,7 @@ function updateBall(dt: number) {
                 pointX = leftIntersect.x
                 pointY = leftIntersect.y
 
-                console.log('left', leftIntersect)
+                console.log('left brick', leftIntersect)
                 brickCollision = true
 
                 collidedBrickX = brick.x
@@ -345,7 +358,7 @@ function updateBall(dt: number) {
                 pointX = rightIntersect.x
                 pointY = rightIntersect.y
 
-                console.log('right', rightIntersect)
+                console.log('right brick', rightIntersect)
                 brickCollision = true
 
                 collidedBrickX = brick.x
@@ -360,8 +373,115 @@ function updateBall(dt: number) {
             }
         }
     }
-    // no collision detected
-    brickCollision = false
+    
+    
+    // paddle collision if ball going down -- maybe check y below certain point
+    if (ball.dy > 0 && ball.y > paddle.y - ballDim - 1) {
+
+        const lookAhead = 5
+
+        // check top
+        line2X3 = paddle.x - ballDim
+        line2Y3 = paddle.y - ballDim
+
+        line2X4 = paddle.x + paddle.w
+        line2Y4 =  paddle.y - ballDim
+
+        const topIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt * lookAhead, ball.y + ball.dy * dt * lookAhead,
+            line2X3, line2Y3, line2X4, line2Y4)
+            
+        if (topIntersect) {
+
+            pointX = topIntersect.x
+            pointY = topIntersect.y
+
+            console.log('top paddle', topIntersect)
+            paddleCollision = true
+
+
+            // bounce up
+            ball.x = pointX
+            ball.y = pointY - 1 // remove collision
+            ball.dy = -ball.dy
+
+            return
+        }
+
+        const sideBorderH = paddle.h - ballDim 
+
+         // check left
+         line2X3 = paddle.x - ballDim
+         line2Y3 = paddle.y - ballDim
+
+         line2X4 = paddle.x - ballDim
+         line2Y4 =  paddle.y + sideBorderH
+
+         const leftIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt * lookAhead, ball.y + ball.dy * dt * lookAhead,
+             line2X3, line2Y3,  line2X4, line2Y4)
+
+         if (leftIntersect) {
+
+
+             pointX = leftIntersect.x
+             pointY = leftIntersect.y
+
+             console.log('left paddle', leftIntersect)
+             paddleCollision = true
+
+             // bounce up left
+             ball.x = pointX - 1 // remove collision
+             ball.y = pointY
+             ball.dx = -Math.abs(ball.dx)
+             ball.dy = -ball.dy
+
+             return
+         }
+
+         // check right
+        line2X3 = paddle.x + paddle.w
+        line2Y3 = paddle.y - ballDim
+
+        line2X4 = paddle.x + paddle.w
+        line2Y4 =  paddle.y + sideBorderH
+
+
+        const rightIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt * lookAhead, ball.y + ball.dy * dt * lookAhead,
+            line2X3, line2Y3,  line2X4, line2Y4)
+
+         if (rightIntersect) {
+
+
+             pointX = rightIntersect.x
+             pointY = rightIntersect.y
+
+             console.log('right paddle', rightIntersect)
+             paddleCollision = true
+
+
+             // bounce up right
+             ball.x = pointX + 1 // remove collision
+             ball.y = pointY 
+             ball.dx = Math.abs(ball.dx)
+             ball.dy = -ball.dy
+
+             return
+         }
+
+            // ball is inside paddle
+        if (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, ball.x, ball.y, ball.w, ball.h)) {
+
+            console.log('aabb paddle')
+            paddleCollision = true
+            ball.y = paddle.y - ballDim
+            ball.dy = -ball.dy
+
+            return
+        }
+
+    }
+
+    ball.x += ball.dx * dt
+    ball.y += ball.dy * dt
 }
 
 
