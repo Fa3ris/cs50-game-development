@@ -1,4 +1,5 @@
 import { ctx, H, keys, W } from "../main";
+import { segmentsIntersect } from "../segment-intersection";
 import { drawPaddle, elementsTileW, elementsTileH, PaddleColor, PaddleSize, ballDim, drawBall, drawBrick } from "../tile-renderer";
 import { State } from "./State";
 
@@ -34,6 +35,30 @@ let ball: Ball
 
 const paddleSpeed = 10;
 
+
+let brickCollision = false
+
+// collision drawings
+
+let line1X1: number
+let line1Y1: number
+let line1X2: number
+let line1Y2: number
+
+let line2X3: number
+let line2Y3: number
+
+let line2X4: number
+let line2Y4: number
+
+let pointX: number
+let pointY: number
+
+let collidedBrickX: number
+let collidedBrickY: number
+
+// END collision drawings
+
 export const play: State = {
     enter: function (): void {
         console.log('enter play')
@@ -66,7 +91,7 @@ export const play: State = {
     update: function (dt: number): void {
 
         updatePaddle(paddle, dt)
-        updateBall(ball, dt)
+        updateBall(dt)
 
 
         if (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, ball.x, ball.y, ball.w, ball.h)) {
@@ -88,6 +113,55 @@ export const play: State = {
         }
 
         drawBall(ctx, ball.index, ball.x, ball.y)
+
+        if (!brickCollision) {
+
+            ctx.strokeStyle = "red"
+            ctx.beginPath();
+            const ballCenterX = ball.x + ballDim / 2
+            const ballCenterY = ball.y + ballDim /2
+            const magnitude = 20
+            const dt = 1 / 60;
+            ctx.moveTo(ball.x, ball.y);
+            ctx.lineTo((ball.x + ball.dx * dt * magnitude)  , (ball.y + ball.dy * dt * magnitude));
+            ctx.stroke();
+        }
+
+
+        if (brickCollision) {
+
+            const magnitude = 20
+            const dt = 1 / 60;
+
+            line1X1 = ball.x
+            line1Y1 = ball.y
+            line1X2 = ball.x + ball.dx * dt * magnitude
+            line1Y2 = ball.y + ball.dy * dt * magnitude
+
+            ctx.strokeStyle = "red"
+            ctx.strokeRect(collidedBrickX, collidedBrickY, elementsTileW, elementsTileH)
+
+            ctx.strokeStyle = "yellow"
+            ctx.beginPath();
+            ctx.moveTo(line1X1, line1Y1)
+            ctx.lineTo(line1X2, line1Y2)
+            ctx.stroke();
+
+            ctx.strokeStyle = "white"
+            
+            ctx.beginPath();
+            ctx.moveTo(line2X3, line2Y3)
+            ctx.lineTo(line2X4, line2Y4)
+            ctx.stroke();
+
+
+            ctx.fillStyle = "green"
+            ctx.beginPath()
+            ctx.arc(pointX, pointY, 2, 0, 2*Math.PI)
+            ctx.fill()
+
+            
+        }
     },
 
 
@@ -111,6 +185,13 @@ export const play: State = {
             ball.dy = yImpulse
             const xHalfRange = 25
             ball.dx = -xHalfRange + Math.random() * (xHalfRange * 2)
+            ball.dx = -70
+        }
+
+        if (keys["p"] == false) {
+            keys["p"] = true
+            brickCollision = !brickCollision
+            console.log("toggle stop", brickCollision)
         }
     },
 
@@ -135,7 +216,7 @@ function updatePaddle(paddle: Paddle, dt: number) {
     }
 }
 
-function updateBall(ball: Ball, dt: number) {
+function updateBall(dt: number) {
 
     if (serveState) {
         ball.x = paddle.x + (paddle.w - ballDim) / 2,
@@ -145,6 +226,125 @@ function updateBall(ball: Ball, dt: number) {
     ball.x += ball.dx * dt
     ball.y += ball.dy * dt
 
+    checkCollideBorders()
+
+    for (const row of bricks) {
+        for (const brick of row) {
+
+            // check for the top left point of the ball
+
+            // check bottom
+
+            line2X3 = brick.x - ballDim
+            line2Y3 = brick.y + elementsTileH
+
+            line2X4 = brick.x + elementsTileW
+            line2Y4 =  brick.y + elementsTileH
+
+            const bottomIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
+                line2X3, line2Y3, line2X4, line2Y4)
+
+            if (bottomIntersect) {
+
+
+                pointX = bottomIntersect.x
+                pointY = bottomIntersect.y
+                console.log("bottom", bottomIntersect)
+                brickCollision = true
+
+                collidedBrickX = brick.x
+                collidedBrickY = brick.y
+                return
+            }
+
+            // check top
+            line2X3 = brick.x - ballDim
+            line2Y3 = brick.y - ballDim
+
+            line2X4 = brick.x + elementsTileW
+            line2Y4 =  brick.y - ballDim
+
+            const topIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
+                line2X3, line2Y3, line2X4, line2Y4)
+                
+            if (topIntersect) {
+
+
+
+                pointX = topIntersect.x
+                pointY = topIntersect.y
+
+                console.log('top', topIntersect)
+                brickCollision = true
+
+                collidedBrickX = brick.x
+                collidedBrickY = brick.y
+                return
+            }
+
+            
+            
+            // check left
+            line2X3 = brick.x - ballDim
+            line2Y3 = brick.y - ballDim
+
+            line2X4 = brick.x - ballDim
+            line2Y4 =  brick.y + elementsTileH
+
+            const leftIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
+                line2X3, line2Y3,  line2X4, line2Y4)
+
+            if (leftIntersect) {
+
+
+
+                pointX = leftIntersect.x
+                pointY = leftIntersect.y
+
+                console.log('left', leftIntersect)
+                brickCollision = true
+
+                collidedBrickX = brick.x
+                collidedBrickY = brick.y
+                return
+            }
+
+            // check right
+                line2X3 = brick.x + elementsTileW
+                line2Y3 = brick.y - ballDim
+
+                line2X4 = brick.x + elementsTileW
+                line2Y4 =  brick.y + elementsTileH
+
+
+             const rightIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
+                line2X3, line2Y3,  line2X4, line2Y4)
+
+            if (rightIntersect) {
+
+
+                pointX = rightIntersect.x
+                pointY = rightIntersect.y
+
+                console.log('right', rightIntersect)
+                brickCollision = true
+
+                collidedBrickX = brick.x
+                collidedBrickY = brick.y
+                return
+            }
+
+        }
+
+        
+
+        
+    }
+    brickCollision = false
+}
+
+
+function checkCollideBorders() {
     // allow ball to bounce off walls
     if (ball.x <= 0) {
         ball.x = 0
@@ -164,7 +364,6 @@ function updateBall(ball: Ball, dt: number) {
         ball.dy = -ball.dy
         // gSounds['wall-hit']:play()
     }
-
 }
 
 
@@ -212,4 +411,18 @@ function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] 
 
     return res
 
+}
+
+
+function ballIntersectsSegment(ballX1: number, ballY1: number, ballX2: number, ballY2: number, x1: number, y1: number, x2: number, y2: number) : {
+    diffX: number,
+    diffY: number
+
+} | undefined
+{
+    const intersection = segmentsIntersect(ballX1, ballY1, ballX2, ballY2, x1, y1, x2, y2)
+
+    if (!intersection)  return undefined
+
+    //
 }
