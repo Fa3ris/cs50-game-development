@@ -66,10 +66,10 @@ let paddlePreviousInfo: {
     dx: number,
 }
 
-let ballHistory: {
+const ballHistory: {
     x: number,
     y: number
-}[]
+}[] = []
 
 const debugPlay = true;
 
@@ -202,11 +202,11 @@ export const play: State = {
             }
 
             if (paddleCollisions && paddleCollisions.top) {
-                console.log('stop on paddle collision top', paddleCollisions.top)
+                // console.log('stop on paddle collision top', paddleCollisions.top)
                 // return
             }
-            console.log('ball update', ball)
-            console.log('paddle update', paddle)
+            // console.log('ball update', ball)
+            // console.log('paddle update', paddle)
         }
 
         if (paddleCollisions && Object.keys(paddleCollisions).length > 0) {
@@ -217,8 +217,8 @@ export const play: State = {
         updateBall(dt)
 
         if (debugPlay) {
-            console.log('ball update after', ball)
-            console.log('paddle update after', paddle)
+            // console.log('ball update after', ball)
+            // console.log('paddle update after', paddle)
         }
     },
 
@@ -340,18 +340,62 @@ export const play: State = {
                 if (paddleCollisions.top) {
                     line = paddleCollisions.top.line
                     point = paddleCollisions.top.point
+
+                    ctx.strokeStyle = "white"
+                    ctx.beginPath();
+                    ctx.moveTo(line.x1, line.y1)
+                    ctx.lineTo(line.x2, line.y2)
+                    ctx.stroke();
+            
+                    ctx.fillStyle = "green"
+                    ctx.beginPath()
+                    ctx.arc(point.x, point.y, 1, 0, 2*Math.PI)
+                    ctx.fill()
                 }
                 if (paddleCollisions.bottom) {
                     line = paddleCollisions.bottom.line
                     point = paddleCollisions.bottom.point
+
+                    ctx.strokeStyle = "white"
+                    ctx.beginPath();
+                    ctx.moveTo(line.x1, line.y1)
+                    ctx.lineTo(line.x2, line.y2)
+                    ctx.stroke();
+            
+                    ctx.fillStyle = "green"
+                    ctx.beginPath()
+                    ctx.arc(point.x, point.y, 1, 0, 2*Math.PI)
+                    ctx.fill()
                 }
                 if (paddleCollisions.left) {
                     line = paddleCollisions.left.line
                     point = paddleCollisions.left.point
+
+                    ctx.strokeStyle = "white"
+                    ctx.beginPath();
+                    ctx.moveTo(line.x1, line.y1)
+                    ctx.lineTo(line.x2, line.y2)
+                    ctx.stroke();
+            
+                    ctx.fillStyle = "green"
+                    ctx.beginPath()
+                    ctx.arc(point.x, point.y, 1, 0, 2*Math.PI)
+                    ctx.fill()
                 }
                 if (paddleCollisions.right) {
                     line = paddleCollisions.right.line
                     point = paddleCollisions.right.point
+
+                    ctx.strokeStyle = "white"
+                    ctx.beginPath();
+                    ctx.moveTo(line.x1, line.y1)
+                    ctx.lineTo(line.x2, line.y2)
+                    ctx.stroke();
+            
+                    ctx.fillStyle = "green"
+                    ctx.beginPath()
+                    ctx.arc(point.x, point.y, 1, 0, 2*Math.PI)
+                    ctx.fill()
                 }
     
                 if (line && point) {
@@ -371,16 +415,6 @@ export const play: State = {
                     ctx.lineTo(line1X2, line1Y2)
                     ctx.stroke();
     
-                    ctx.strokeStyle = "white"
-                    ctx.beginPath();
-                    ctx.moveTo(line.x1, line.y1)
-                    ctx.lineTo(line.x2, line.y2)
-                    ctx.stroke();
-            
-                    ctx.fillStyle = "green"
-                    ctx.beginPath()
-                    ctx.arc(point.x, point.y, 2, 0, 2*Math.PI)
-                    ctx.fill()
 
                     ctx.strokeStyle = "rgba(0, 255, 0, .5)"
                     ctx.strokeRect(paddlePreviousInfo.x, paddlePreviousInfo.y, paddle.w, paddle.h)
@@ -390,6 +424,13 @@ export const play: State = {
                     ctx.moveTo(paddlePreviousInfo.x, paddlePreviousInfo.y)
                     ctx.lineTo(paddlePreviousInfo.x + paddlePreviousInfo.dx, paddlePreviousInfo.y)
                     ctx.stroke();
+
+                    for (const entry of ballHistory) {
+
+                        ctx.strokeStyle = "rgba(255, 0, 0, 0.5)"
+                        ctx.strokeRect(entry.x, entry.y, ball.w, ball.h)
+                        
+                    }
                 }
             }
         }
@@ -464,6 +505,8 @@ function updateBall(dt: number) {
 
     paddleCollisions = {}
 
+    ballHistory.length = 0
+
     brickCollision = false
     paddleCollision = false
     paddleAABBCollision = false
@@ -483,187 +526,242 @@ function updateBall(dt: number) {
 
     checkCollideBorders()
 
-    if (checkCollideBricks(dt) == true) {
-        return
-    }
+    if (checkCollideBricks(dt) == true) { return }
     
 
     // paddle collision if ball going down
     // ball.y + ball.h > paddle.y - 1
     if (ball.dy > 0) {
 
-        if (ballPaddleSegmentIntersection(dt) == true) {
-            return
-        }
+        if (ballPaddleSegmentIntersection(dt) == true) { return }
 
-        // last resort - ball is inside paddle but no collision detected before
-        if (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, ball.x, ball.y, ball.w, ball.h)) {
-
-            console.log('aabb paddle')
-            console.log('paddle', JSON.stringify(paddle))
-            console.log('ball', JSON.stringify(ball))
-            // paddleAABB = true
-            
-
-            console.log('capture', capturedBallInfo)
-
-            console.log('resolve aabb', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
-
-            /* find previous position where no collision */
-            
-             let rewindNb = 0;
-
-             let noCollisionBallPoint : {x: number, y: number} = {
-                 x: ball.x,
-                 y: ball.y
-             }
- 
-             do {
-                 rewindNb++
-                 noCollisionBallPoint.x -= ball.dx * dt
-                 noCollisionBallPoint.y -= ball.dy * dt
-             } while (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h,
-                 noCollisionBallPoint.x, noCollisionBallPoint.y, ball.w, ball.h))
-
-
-            console.log('rewinded', rewindNb)
-            console.log('point of no collision', noCollisionBallPoint)
-
-            /* check if segment intersects with TOP */
-
-            line2X3 = paddle.x - ball.w
-            line2Y3 = paddle.y
-            line2X4 = paddle.x + paddle.w
-            line2Y4 = paddle.y
-            const topIntersect = segmentsIntersect(ball.x, ball.y, noCollisionBallPoint.x, noCollisionBallPoint.y,
-            line2X3, line2Y3,  line2X4, line2Y4)
-
-            if (topIntersect) {
-
-                paddleCollisions = {
-                    top: {
-                        line: {
-                            x1: line2X3,
-                            y1: line2Y3,
-                            x2: line2X4,
-                            y2: line2Y4
-    
         
-                        },
-                        point: {
-                            x: topIntersect.x,
-                            y: topIntersect.y
-                        }
-                    }
-                }
-
-                
-                console.log('ball intercepted top side')
-                const maxDisplacement = 5
-                const resultDisplacement = Math.min(maxDisplacement, Math.abs(topIntersect.x - ball.x) / 2)
-                console.log('displace by', resultDisplacement)
-
-                // rewind
-                ball.x += -Math.sign(ball.dx) * resultDisplacement
-
-                // ball.x = (topIntersect.x + ball.x) / 2 // place at middle because if ball entered too much from the side, replace far away -- looks weird
-                ball.y = topIntersect.y - ball.h
-                ball.dy = -Math.abs(ball.dy) // go up
-                return
-            }
-
-            /* check if segment intersects with LEFT */
-
-            line2X3 = paddle.x
-            line2Y3 = paddle.y - ball.h
-            line2X4 = paddle.x
-            line2Y4 = paddle.y + paddle.h
-
-            const leftIntersect = segmentsIntersect(ball.x, ball.y, noCollisionBallPoint.x, noCollisionBallPoint.y,
-                line2X3, line2Y3,  line2X4, line2Y4)
-
-            if (leftIntersect) {
-
-                paddleCollisions = {
-                    left: {
-                        line: {
-                            x1: line2X3,
-                            y1: line2Y3,
-                            x2: line2X4,
-                            y2: line2Y4
         
-                        },
-                        point: {
-                            x: leftIntersect.x,
-                            y: leftIntersect.y
-                        }
-                    }
-                }
-
-                console.log('ball intercepted left side')
-                ball.x = leftIntersect.x - ball.w
-                ball.y = leftIntersect.y
-
-                ball.dx = -Math.abs(ball.dx) // go left
-
-                if (ball.y <= paddle.y + paddle.h /2) { // if saveable
-                    ball.dy = -Math.abs(ball.dy) // go up
-                } else {
-                    console.log("left side but not saveable", "ball",  JSON.stringify(ball))
-                }
-                return
-            }
-
-
-            /* check if segment intersects with RIGHT */
-
-            line2X3 = paddle.x + paddle.w
-            line2Y3 = paddle.y - ball.h
-            line2X4 = paddle.x + paddle.w
-            line2Y4 = paddle.y + paddle.h
-
-            const rightIntersect = segmentsIntersect(ball.x, ball.y, noCollisionBallPoint.x, noCollisionBallPoint.y,
-                line2X3, line2Y3,  line2X4, line2Y4)
-
-            if (rightIntersect) {
-
-                paddleCollisions = {
-                    left: {
-                        line: {
-                            x1: line2X3,
-                            y1: line2Y3,
-                            x2: line2X4,
-                            y2: line2Y4
-        
-                        },
-                        point: {
-                            x: rightIntersect.x,
-                            y: rightIntersect.y
-                        }
-                    }
-                }
-
-                console.log('ball intercepted right side')
-                ball.x = rightIntersect.x
-                ball.y = rightIntersect.y
-
-                ball.dx = Math.abs(ball.dx) // go right
-
-                if (ball.y <= paddle.y + paddle.h /2) { // if saveable
-                    ball.dy = -Math.abs(ball.dy) // go up
-                } else {
-                    console.log("right side but not saveable", "ball",  JSON.stringify(ball))
-                }
-                return
-            }
-            console.error("could not resolve collision", "ball", JSON.stringify(ball), "paddle", JSON.stringify(paddle))
-        }
+        if (ballPaddleAABBCollision(dt) == true) { return }
     }
 
     ball.x += ball.dx * dt
     ball.y += ball.dy * dt
 }
 
+function ballPaddleAABBCollision(dt: number): boolean {
+
+    // last resort - ball is inside paddle but no collision detected before
+    if (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, ball.x, ball.y, ball.w, ball.h)) {
+
+        console.log('aabb paddle')
+        console.log('paddle', JSON.stringify(paddle))
+        console.log('ball', JSON.stringify(ball))
+        // paddleAABB = true
+        
+
+        console.log('capture', capturedBallInfo)
+
+        console.log('resolve aabb', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
+
+        /* find previous position where no collision */
+        
+         let rewindNb = 0;
+
+         let noCollisionBallPoint : {x: number, y: number} = {
+             x: ball.x,
+             y: ball.y
+         }
+
+         do {
+             rewindNb++
+             noCollisionBallPoint.x -= ball.dx * dt
+             noCollisionBallPoint.y -= ball.dy * dt
+             ballHistory.push({
+                 x: noCollisionBallPoint.x,
+                 y: noCollisionBallPoint.y
+             })
+         } while (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h,
+             noCollisionBallPoint.x, noCollisionBallPoint.y, ball.w, ball.h))
+
+
+        console.log('rewinded', rewindNb)
+        console.log('point of no collision', noCollisionBallPoint)
+
+        /* check if segment intersects with TOP */
+
+        line2X3 = paddle.x - ball.w
+        line2Y3 = paddle.y
+        line2X4 = paddle.x + paddle.w
+        line2Y4 = paddle.y
+        const topIntersect = segmentsIntersect(ball.x, ball.y, noCollisionBallPoint.x, noCollisionBallPoint.y,
+        line2X3, line2Y3,  line2X4, line2Y4)
+
+        if (topIntersect) {
+
+            paddleCollisions = {
+                top: {
+                    line: {
+                        x1: line2X3,
+                        y1: line2Y3,
+                        x2: line2X4,
+                        y2: line2Y4
+
+    
+                    },
+                    point: {
+                        x: topIntersect.x,
+                        y: topIntersect.y
+                    }
+                }
+            }
+
+            
+            console.log('ball intercepted top side')
+            const maxDisplacement = 5
+            const resultDisplacement = Math.min(maxDisplacement, Math.abs(topIntersect.x - ball.x) / 2)
+            console.log('displace by', resultDisplacement)
+
+            // rewind
+            ball.x += -Math.sign(ball.dx) * resultDisplacement
+
+            // ball.x = (topIntersect.x + ball.x) / 2 // place at middle because if ball entered too much from the side, replace far away -- looks weird
+            ball.y = topIntersect.y - ball.h
+            ball.dy = -Math.abs(ball.dy) // go up
+            return true
+        }
+
+        /* check if segment intersects with LEFT */
+
+        line2X3 = paddle.x
+        line2Y3 = paddle.y - ball.h
+        line2X4 = paddle.x
+        line2Y4 = paddle.y + paddle.h
+
+        const leftIntersect = segmentsIntersect(ball.x, ball.y, noCollisionBallPoint.x, noCollisionBallPoint.y,
+            line2X3, line2Y3,  line2X4, line2Y4)
+
+        if (leftIntersect) {
+
+            paddleCollisions = {
+                left: {
+                    line: {
+                        x1: line2X3,
+                        y1: line2Y3,
+                        x2: line2X4,
+                        y2: line2Y4
+    
+                    },
+                    point: {
+                        x: leftIntersect.x,
+                        y: leftIntersect.y
+                    }
+                }
+            }
+
+            console.log('ball intercepted left side')
+            ball.x = leftIntersect.x - ball.w
+            ball.y = leftIntersect.y
+
+            ball.dx = -Math.abs(ball.dx) // go left
+
+            if (ball.y <= paddle.y + paddle.h /2) { // if saveable
+                ball.dy = -Math.abs(ball.dy) // go up
+            } else {
+                console.log("left side but not saveable", "ball",  JSON.stringify(ball))
+            }
+            return true
+        }
+
+
+        /* check if segment intersects with RIGHT */
+
+        line2X3 = paddle.x + paddle.w
+        line2Y3 = paddle.y - ball.h
+        line2X4 = paddle.x + paddle.w
+        line2Y4 = paddle.y + paddle.h
+
+        const rightIntersect = segmentsIntersect(ball.x, ball.y, noCollisionBallPoint.x, noCollisionBallPoint.y,
+            line2X3, line2Y3,  line2X4, line2Y4)
+
+        if (rightIntersect) {
+
+            paddleCollisions = {
+                right: {
+                    line: {
+                        x1: line2X3,
+                        y1: line2Y3,
+                        x2: line2X4,
+                        y2: line2Y4
+    
+                    },
+                    point: {
+                        x: rightIntersect.x,
+                        y: rightIntersect.y
+                    }
+                }
+            }
+
+            console.log('ball intercepted right side')
+            ball.x = rightIntersect.x
+            ball.y = rightIntersect.y
+
+            ball.dx = Math.abs(ball.dx) // go right
+
+            if (ball.y <= paddle.y + paddle.h /2) { // if saveable
+                ball.dy = -Math.abs(ball.dy) // go up
+            } else {
+                console.log("right side but not saveable", "ball",  JSON.stringify(ball))
+            }
+            return true
+        }
+
+        paddleCollisions = {
+            right: {
+                line: {
+                    x1: line2X3,
+                    y1: line2Y3,
+                    x2: line2X4,
+                    y2: line2Y4
+
+                },
+                point: {
+                    x: 0,
+                    y: 0
+                }
+            },
+
+            top: {
+                line: {
+                    x1: paddle.x - ball.w,
+                    y1: paddle.y,
+                    x2: paddle.x + paddle.w,
+                    y2: paddle.y
+
+                },
+                point: {
+                    x: 0,
+                    y: 0
+                }
+            },
+
+
+            left: {
+                line: {
+                    x1: paddle.x,
+                    y1: paddle.y - ball.h,
+                    x2: paddle.x,
+                    y2: paddle.y + paddle.h
+
+                },
+                point: {
+                    x: 0,
+                    y: 0
+                }
+            }
+        }
+
+        console.error("could not resolve collision", "ball", JSON.stringify(ball), "paddle", JSON.stringify(paddle))
+        
+    }
+
+    return false
+}
 
 function ballPaddleSegmentIntersection(dt: number): boolean {
 
