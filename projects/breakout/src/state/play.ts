@@ -18,6 +18,50 @@ type Paddle = {
 }
 
 
+let paddle: Paddle
+
+let serveState = true;
+
+type BrickInfo = {
+    x: number,
+    y: number,
+    life: number,
+    index: number
+}
+
+const bricks: BrickInfo[][] = []
+
+type Ball = {
+    w: number,
+    h: number,
+    x: number,
+    y: number,
+    index: number,
+    dx: number,
+    dy: number
+}
+let ball: Ball
+
+const paddleSpeed = 10;
+
+
+/* collision drawings */
+
+let brickCollision = false
+
+let paddleCollision = false
+
+let paddleAABBCollision = false
+
+let capturedBallInfo: {
+    x: number,
+    y: number,
+    dx: number,
+    dy: number
+}
+
+const debugPlay = false;
+
 type CollisionLine = {
     x1: number,
     y1: number,
@@ -49,43 +93,6 @@ let stopPaddleCollision: {
     right?: boolean
 }
 
-
-
-let paddle: Paddle
-
-let serveState = true;
-
-const bricks: BrickInfo[][] = []
-
-type Ball = {
-    w: number,
-    h: number,
-    x: number,
-    y: number,
-    index: number,
-    dx: number,
-    dy: number
-}
-let ball: Ball
-
-const paddleSpeed = 10;
-
-
-let brickCollision = false
-
-let paddleCollision = false
-
-let paddleAABB = false
-
-let capturedBallInfo: {
-    x: number,
-    y: number,
-    dx: number,
-    dy: number
-}
-
-// collision drawings
-
 let line1X1: number
 let line1Y1: number
 let line1X2: number
@@ -104,7 +111,7 @@ let pointY: number
 let collidedBrickX: number
 let collidedBrickY: number
 
-// END collision drawings
+/* END collision drawings */
 
 export const play: State = {
     enter: function (): void {
@@ -129,79 +136,75 @@ export const play: State = {
             dy: 0
         }
 
-        /* DEBUG setup */
-
-        // values to trigger aabb collision
-
-        paddle.x = 204
-        paddle.y = 212
-        paddle.dx = 0
-
-        ball.x = 197.16666666666632
-        ball.y = 150
-
-        ball.y -= 10
-
-        ball.dx = 100
-        ball.dy = 60
-
-        // values to trigger aabb collision
-
-        //  paddle.x = 214
-        // paddle.y = 212
-        // paddle.dx = 0
-
-        // ball.x = 207.66666666666623
-        // ball.y = 226
-
-        // // ball.y -= 10
-
-        // ball.dx = 70
-        // ball.dy = 60
-
-
-        serveState = false
-
-
-        /* DEBUG setup END */
-
-
         const rowGap = 6
         bricks.push(generateBrickRow(3, 100, 8))
         bricks.push(generateBrickRow(5, 100 + elementsTileH + rowGap, 8))
 
+
+        if (debugPlay) {
+            // values to trigger aabb collision
+
+            paddle.x = 204
+            paddle.y = 212
+            paddle.dx = 0
+    
+            ball.x = 197.16666666666632
+            ball.y = 150
+    
+            ball.y -= 10
+    
+            ball.dx = 100
+            ball.dy = 60
+
+            serveState = false
+
+             /* values to trigger aabb collision
+
+            paddle.x = 214
+            paddle.y = 212
+            paddle.dx = 0
+
+            ball.x = 207.66666666666623
+            ball.y = 226
+
+            // ball.y -= 10
+
+            ball.dx = 70
+            ball.dy = 60 
+        */
+        }
     },
 
     update: function (dt: number): void {
 
-        if (brickCollision) {
-        //     return
-        } 
+        if (debugPlay) {
 
-        if (paddleCollision) {
-            // return
+            if (brickCollision) {
+                // return
+            } 
+    
+            if (paddleCollision) {
+                // return
+            }
+            if (paddleAABBCollision) {
+                // return
+            }
+    
+            if (paddleCollisions && paddleCollisions.top) {
+                console.log('stop on paddle collision top', paddleCollisions.top)
+                // return
+            }
+            console.log('ball update', ball)
+            console.log('paddle update', paddle)
         }
-        if (paddleAABB) {
-            // return
-        }
-
-        if (paddleCollisions && paddleCollisions.top) {
-            
-            // console.log('stop on paddle collision top', paddleCollisions.top)
-            // return
-        }
-
-        // console.log('ball update', ball)
-        // console.log('paddle update', paddle)
-
-        // debugger
 
         updatePaddle(paddle, dt)
         updateBall(dt)
 
-        // console.log('ball update after', ball)
-        // console.log('paddle update after', paddle)
-
+        if (debugPlay) {
+            console.log('ball update after', ball)
+            console.log('paddle update after', paddle)
+        }
     },
 
 
@@ -217,173 +220,153 @@ export const play: State = {
 
         drawBall(ctx, ball.index, ball.x, ball.y)
 
-        if (!(brickCollision || paddleCollision || paddleAABB)) {
-
-            ctx.strokeStyle = "red"
-            ctx.beginPath();
-            const ballCenterX = ball.x + ballDim / 2
-            const ballCenterY = ball.y + ballDim /2
-            const magnitude = 20
-            ctx.moveTo(ball.x, ball.y);
-            ctx.lineTo((ball.x + ball.dx * loopStep * magnitude)  , (ball.y + ball.dy * loopStep * magnitude));
-            ctx.stroke();
-        }
-
-        if (brickCollision) {
-            ctx.strokeStyle = "red"
-            ctx.strokeRect(collidedBrickX, collidedBrickY, elementsTileW, elementsTileH)
-        }
-
-        if (paddleCollision) {
-            ctx.strokeStyle = "red"
-            ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h)
-        }
-
-        if (paddleAABB) {
-            ctx.strokeStyle = "red"
-            ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h)
-
-
-            const magnitude = 1
-
-            line1X1 = capturedBallInfo.x
-            line1Y1 = capturedBallInfo.y
-            line1X2 = capturedBallInfo.x + capturedBallInfo.dx * loopStep * magnitude
-            line1Y2 = capturedBallInfo.y + capturedBallInfo.dy * loopStep * magnitude
-
-            drawBall(ctx, ball.index, capturedBallInfo.x, capturedBallInfo.y)
-
-            ctx.strokeStyle = "pink"
-            ctx.beginPath();
-            ctx.moveTo(line1X1, line1Y1)
-            ctx.lineTo(line1X2, line1Y2)
-            ctx.stroke();
-
-            ctx.fillStyle = "aqua"
-            ctx.beginPath()
-            ctx.arc(line1X2, line1Y2, .5, 0, 2*Math.PI)
-            ctx.fill()
-
-            const sideBorderH = paddle.h - ballDim 
-            // check left
-         line2X3 = paddle.x - ballDim
-         line2Y3 = paddle.y - ballDim
-
-         line2X4 = paddle.x - ballDim
-         line2Y4 =  paddle.y + sideBorderH
-
-         ctx.strokeStyle = "white"
-            
-         ctx.beginPath();
-         ctx.moveTo(line2X3, line2Y3)
-         ctx.lineTo(line2X4, line2Y4)
-         ctx.stroke();
-
-        }
-
-        if (brickCollision || paddleCollision) {
-
-            const magnitude = 20
-
-            line1X1 = ball.x
-            line1Y1 = ball.y
-            line1X2 = ball.x + ball.dx * loopStep * magnitude
-            line1Y2 = ball.y + ball.dy * loopStep * magnitude
-
-
-            ctx.strokeStyle = "yellow"
-            ctx.beginPath();
-            ctx.moveTo(line1X1, line1Y1)
-            ctx.lineTo(line1X2, line1Y2)
-            ctx.stroke();
-
-            ctx.strokeStyle = "white"
-            
-            ctx.beginPath();
-            ctx.moveTo(line2X3, line2Y3)
-            ctx.lineTo(line2X4, line2Y4)
-            ctx.stroke();
-
-
-            ctx.fillStyle = "green"
-            ctx.beginPath()
-            ctx.arc(pointX, pointY, 2, 0, 2*Math.PI)
-            ctx.fill()
-
-            
-        }
-
-
-        if (paddleCollisions) {
-
-         
-            let line: CollisionLine | undefined;
-            let point: CollisionPoint | undefined;
-            
-            if (paddleCollisions.top) {
-                
-
-                line = paddleCollisions.top.line
-
-                point = paddleCollisions.top.point
-            
-            }
-
-            if (paddleCollisions.bottom) {
-
-                line = paddleCollisions.bottom.line
-
-                point = paddleCollisions.bottom.point
-            
-            }
-            if (paddleCollisions.left) {
-
-                line = paddleCollisions.left.line
-
-                point = paddleCollisions.left.point
-            
-            }
-
-            if (paddleCollisions.right) {
-
-                line = paddleCollisions.right.line
-
-                point = paddleCollisions.right.point
-            
-            }
-
-            if (line && point) {
-
+        if (debugPlay) {
+            if (!(brickCollision || paddleCollision || paddleAABBCollision)) {
+    
                 ctx.strokeStyle = "red"
-                ctx.strokeRect(capturedBallInfo.x, capturedBallInfo.y, ball.w, ball.h)
+                ctx.beginPath();
+                const ballCenterX = ball.x + ballDim / 2
+                const ballCenterY = ball.y + ballDim /2
+                const magnitude = 20
+                ctx.moveTo(ball.x, ball.y);
+                ctx.lineTo((ball.x + ball.dx * loopStep * magnitude)  , (ball.y + ball.dy * loopStep * magnitude));
+                ctx.stroke();
+            }
 
-                const magnitude = 10
+            if (brickCollision) {
+                ctx.strokeStyle = "red"
+                ctx.strokeRect(collidedBrickX, collidedBrickY, elementsTileW, elementsTileH)
+            }
+    
+            if (paddleCollision) {
+                ctx.strokeStyle = "red"
+                ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h)
+            }
 
+
+            if (paddleAABBCollision) {
+                ctx.strokeStyle = "red"
+                ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h)
+    
+    
+                const magnitude = 1
+    
                 line1X1 = capturedBallInfo.x
                 line1Y1 = capturedBallInfo.y
                 line1X2 = capturedBallInfo.x + capturedBallInfo.dx * loopStep * magnitude
                 line1Y2 = capturedBallInfo.y + capturedBallInfo.dy * loopStep * magnitude
+    
+                drawBall(ctx, ball.index, capturedBallInfo.x, capturedBallInfo.y)
     
                 ctx.strokeStyle = "pink"
                 ctx.beginPath();
                 ctx.moveTo(line1X1, line1Y1)
                 ctx.lineTo(line1X2, line1Y2)
                 ctx.stroke();
-
+    
+                ctx.fillStyle = "aqua"
+                ctx.beginPath()
+                ctx.arc(line1X2, line1Y2, .5, 0, 2*Math.PI)
+                ctx.fill()
+    
+                const sideBorderH = paddle.h - ballDim 
+                
+                // check left
+                line2X3 = paddle.x - ballDim
+                line2Y3 = paddle.y - ballDim
+        
+                line2X4 = paddle.x - ballDim
+                line2Y4 =  paddle.y + sideBorderH
+        
                 ctx.strokeStyle = "white"
+                    
                 ctx.beginPath();
-                ctx.moveTo(line.x1, line.y1)
-                ctx.lineTo(line.x2, line.y2)
+                ctx.moveTo(line2X3, line2Y3)
+                ctx.lineTo(line2X4, line2Y4)
                 ctx.stroke();
-        
-        
+    
+            }
+
+            if (brickCollision || paddleCollision) {
+
+                const magnitude = 20
+    
+                line1X1 = ball.x
+                line1Y1 = ball.y
+                line1X2 = ball.x + ball.dx * loopStep * magnitude
+                line1Y2 = ball.y + ball.dy * loopStep * magnitude
+    
+                ctx.strokeStyle = "yellow"
+                ctx.beginPath();
+                ctx.moveTo(line1X1, line1Y1)
+                ctx.lineTo(line1X2, line1Y2)
+                ctx.stroke();
+    
+                ctx.strokeStyle = "white"
+                
+                ctx.beginPath();
+                ctx.moveTo(line2X3, line2Y3)
+                ctx.lineTo(line2X4, line2Y4)
+                ctx.stroke();
+    
                 ctx.fillStyle = "green"
                 ctx.beginPath()
-                ctx.arc(point.x, point.y, 2, 0, 2*Math.PI)
+                ctx.arc(pointX, pointY, 2, 0, 2*Math.PI)
                 ctx.fill()
+                
             }
 
 
+            if (paddleCollisions) {
+
+                let line: CollisionLine | undefined;
+                let point: CollisionPoint | undefined;
+                
+                if (paddleCollisions.top) {
+                    line = paddleCollisions.top.line
+                    point = paddleCollisions.top.point
+                }
+                if (paddleCollisions.bottom) {
+                    line = paddleCollisions.bottom.line
+                    point = paddleCollisions.bottom.point
+                }
+                if (paddleCollisions.left) {
+                    line = paddleCollisions.left.line
+                    point = paddleCollisions.left.point
+                }
+                if (paddleCollisions.right) {
+                    line = paddleCollisions.right.line
+                    point = paddleCollisions.right.point
+                }
+    
+                if (line && point) {
+                    ctx.strokeStyle = "red"
+                    ctx.strokeRect(capturedBallInfo.x, capturedBallInfo.y, ball.w, ball.h)
+                    const magnitude = 10
+    
+                    line1X1 = capturedBallInfo.x
+                    line1Y1 = capturedBallInfo.y
+                    line1X2 = capturedBallInfo.x + capturedBallInfo.dx * loopStep * magnitude
+                    line1Y2 = capturedBallInfo.y + capturedBallInfo.dy * loopStep * magnitude
+        
+                    ctx.strokeStyle = "pink"
+                    ctx.beginPath();
+                    ctx.moveTo(line1X1, line1Y1)
+                    ctx.lineTo(line1X2, line1Y2)
+                    ctx.stroke();
+    
+                    ctx.strokeStyle = "white"
+                    ctx.beginPath();
+                    ctx.moveTo(line.x1, line.y1)
+                    ctx.lineTo(line.x2, line.y2)
+                    ctx.stroke();
+            
+                    ctx.fillStyle = "green"
+                    ctx.beginPath()
+                    ctx.arc(point.x, point.y, 2, 0, 2*Math.PI)
+                    ctx.fill()
+                }
+            }
         }
     },
 
@@ -401,7 +384,7 @@ export const play: State = {
             paddle.dx -= paddleSpeed;
         }
 
-        if (keys[" "] == false && serveState) {
+        if (keys[" "] == false && serveState) { // serve
             keys[" "] = true // do not process again
             serveState = false
             const yImpulse = -60
@@ -415,13 +398,11 @@ export const play: State = {
             keys["p"] = true // do not process again
             brickCollision = false
             paddleCollision = false
-            paddleAABB = false
+            paddleAABBCollision = false
             paddleCollisions = {}
             console.log("toggle stop", brickCollision)
         }
     },
-
-
 
     exit: function (): void {
         console.log('exit play')
@@ -448,7 +429,7 @@ function updateBall(dt: number) {
 
     brickCollision = false
     paddleCollision = false
-    paddleAABB = false
+    paddleAABBCollision = false
 
     if (serveState) {
         ball.x = paddle.x + (paddle.w - ballDim) / 2,
@@ -1258,12 +1239,7 @@ function collisionAABB(x1: number, y1: number, w1: number, h1: number, x2: numbe
 }
 
 
-type BrickInfo = {
-    x: number,
-    y: number,
-    life: number,
-    index: number
-}
+
 
 
 function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] {
