@@ -60,7 +60,18 @@ let capturedBallInfo: {
     dy: number
 }
 
-const debugPlay = false;
+let paddlePreviousInfo: {
+    x: number,
+    y: number,
+    dx: number,
+}
+
+let ballHistory: {
+    x: number,
+    y: number
+}[]
+
+const debugPlay = true;
 
 type CollisionLine = {
     x1: number,
@@ -189,13 +200,17 @@ export const play: State = {
             if (paddleAABBCollision) {
                 // return
             }
-    
+
             if (paddleCollisions && paddleCollisions.top) {
                 console.log('stop on paddle collision top', paddleCollisions.top)
                 // return
             }
             console.log('ball update', ball)
             console.log('paddle update', paddle)
+        }
+
+        if (paddleCollisions && Object.keys(paddleCollisions).length > 0) {
+            return
         }
 
         updatePaddle(paddle, dt)
@@ -340,6 +355,7 @@ export const play: State = {
                 }
     
                 if (line && point) {
+
                     ctx.strokeStyle = "red"
                     ctx.strokeRect(capturedBallInfo.x, capturedBallInfo.y, ball.w, ball.h)
                     const magnitude = 10
@@ -365,12 +381,23 @@ export const play: State = {
                     ctx.beginPath()
                     ctx.arc(point.x, point.y, 2, 0, 2*Math.PI)
                     ctx.fill()
+
+                    ctx.strokeStyle = "rgba(0, 255, 0, .5)"
+                    ctx.strokeRect(paddlePreviousInfo.x, paddlePreviousInfo.y, paddle.w, paddle.h)
+
+                    ctx.strokeStyle = "rgba(245, 40, 145, 1)"
+                    ctx.beginPath();
+                    ctx.moveTo(paddlePreviousInfo.x, paddlePreviousInfo.y)
+                    ctx.lineTo(paddlePreviousInfo.x + paddlePreviousInfo.dx, paddlePreviousInfo.y)
+                    ctx.stroke();
                 }
             }
         }
     },
 
-
+    /**
+     * called only if has key
+     */
     processInput: function (): void {
 
         if (keys["ArrowRight"] != undefined) { // can keep it pressed
@@ -409,10 +436,20 @@ export const play: State = {
     }
 }
 
-function updatePaddle(paddle: Paddle, dt: number) {
-    paddle.x += paddle.dx
+let paddleMoveX: number
 
+function updatePaddle(paddle: Paddle, dt: number) {
+
+    paddlePreviousInfo = {
+        x: paddle.x,
+        y: paddle.y,
+        dx: paddle.dx
+    }
+
+    paddleMoveX = paddle.dx
     paddle.dx = 0
+
+    paddle.x += paddleMoveX
 
     if (paddle.x < 0) {
         paddle.x = 0
@@ -443,6 +480,13 @@ function updateBall(dt: number) {
         return
     }
     
+    capturedBallInfo = {
+        x: ball.x,
+        y: ball.y,
+        dx: ball.dx,
+        dy: ball.dy
+    }
+
     // paddle collision if ball going down
     // ball.y + ball.h > paddle.y - 1
     if (ball.dy > 0) {
@@ -464,22 +508,22 @@ function updateBall(dt: number) {
             
         if (topIntersect) {
 
-            // paddleCollisions = {
-            //     top: {
-            //         line: {
-            //             x1: paddle.x - ballDim,
-            //             y1: paddle.y - ballDim,
-            //             x2: paddle.x + paddle.w,
-            //             y2: paddle.y - ballDim
+            paddleCollisions = {
+                top: {
+                    line: {
+                        x1: paddle.x - ballDim,
+                        y1: paddle.y - ballDim,
+                        x2: paddle.x + paddle.w,
+                        y2: paddle.y - ballDim
 
     
-            //         },
-            //         point: {
-            //             x: topIntersect.x,
-            //             y: topIntersect.y
-            //         }
-            //     }
-            // }
+                    },
+                    point: {
+                        x: topIntersect.x,
+                        y: topIntersect.y
+                    }
+                }
+            }
 
             pointX = topIntersect.x
             pointY = topIntersect.y
@@ -505,22 +549,22 @@ function updateBall(dt: number) {
             pointY = topIntersectBefore.y
 
 
-            // paddleCollisions = {
-            //     top: {
-            //         line: {
-            //             x1: paddle.x - ballDim,
-            //             y1: paddle.y - ballDim,
-            //             x2: paddle.x + paddle.w,
-            //             y2: paddle.y - ballDim
+            paddleCollisions = {
+                top: {
+                    line: {
+                        x1: paddle.x - ballDim,
+                        y1: paddle.y - ballDim,
+                        x2: paddle.x + paddle.w,
+                        y2: paddle.y - ballDim
 
     
-            //         },
-            //         point: {
-            //             x: topIntersectBefore.x,
-            //             y: topIntersectBefore.y
-            //         }
-            //     }
-            // }
+                    },
+                    point: {
+                        x: topIntersectBefore.x,
+                        y: topIntersectBefore.y
+                    }
+                }
+            }
 
             console.log('top paddle before', topIntersectBefore)
             paddleCollision = true
@@ -719,12 +763,9 @@ function updateBall(dt: number) {
             console.log('paddle', JSON.stringify(paddle))
             console.log('ball', JSON.stringify(ball))
             // paddleAABB = true
-            capturedBallInfo = {
-                x: ball.x,
-                y: ball.y,
-                dx: ball.dx,
-                dy: ball.dy
-            }
+            
+
+            
 
             console.log('capture', capturedBallInfo)
 
