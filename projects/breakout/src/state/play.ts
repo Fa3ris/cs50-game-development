@@ -439,138 +439,9 @@ function updateBall(dt: number) {
 
     checkCollideBorders()
 
-    // check brick collision -- check only if ball above last row of bricks + some value
-    for (const row of bricks) {
-        for (const brick of row) {
-
-            // check for the top left point of the ball
-
-            // check bottom
-
-            line2X3 = brick.x - ballDim
-            line2Y3 = brick.y + elementsTileH
-
-            line2X4 = brick.x + elementsTileW
-            line2Y4 =  brick.y + elementsTileH
-
-            const bottomIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
-                line2X3, line2Y3, line2X4, line2Y4)
-
-            if (bottomIntersect) {
-
-
-                pointX = bottomIntersect.x
-                pointY = bottomIntersect.y
-                console.log("bottom brick", bottomIntersect)
-                brickCollision = true
-
-                collidedBrickX = brick.x
-                collidedBrickY = brick.y
-
-                // bounce down
-                ball.x = pointX
-                ball.y = pointY + 1 // remove collision
-                ball.dy = -ball.dy
-
-
-                return
-            }
-
-            // check top
-            line2X3 = brick.x - ballDim
-            line2Y3 = brick.y - ballDim
-
-            line2X4 = brick.x + elementsTileW
-            line2Y4 =  brick.y - ballDim
-
-            const topIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
-                line2X3, line2Y3, line2X4, line2Y4)
-                
-            if (topIntersect) {
-
-                pointX = topIntersect.x
-                pointY = topIntersect.y
-
-                console.log('top brick', topIntersect)
-                brickCollision = true
-
-                collidedBrickX = brick.x
-                collidedBrickY = brick.y
-
-                // bounce up
-                ball.x = pointX
-                ball.y = pointY - 1 // remove collision
-                ball.dy = -ball.dy
-
-                return
-            }
-
-            
-            
-            // check left
-            line2X3 = brick.x - ballDim
-            line2Y3 = brick.y - ballDim
-
-            line2X4 = brick.x - ballDim
-            line2Y4 =  brick.y + elementsTileH
-
-            const leftIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
-                line2X3, line2Y3,  line2X4, line2Y4)
-
-            if (leftIntersect) {
-
-
-
-                pointX = leftIntersect.x
-                pointY = leftIntersect.y
-
-                console.log('left brick', leftIntersect)
-                brickCollision = true
-
-                collidedBrickX = brick.x
-                collidedBrickY = brick.y
-
-                // bounce left
-                ball.x = pointX - 1 // remove collision
-                ball.y = pointY
-                ball.dx = -ball.dx
-
-                return
-            }
-
-            // check right
-                line2X3 = brick.x + elementsTileW
-                line2Y3 = brick.y - ballDim
-
-                line2X4 = brick.x + elementsTileW
-                line2Y4 =  brick.y + elementsTileH
-
-
-             const rightIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
-                line2X3, line2Y3,  line2X4, line2Y4)
-
-            if (rightIntersect) {
-
-
-                pointX = rightIntersect.x
-                pointY = rightIntersect.y
-
-                console.log('right brick', rightIntersect)
-                brickCollision = true
-
-                collidedBrickX = brick.x
-                collidedBrickY = brick.y
-
-                // bounce right
-                ball.x = pointX + 1 // remove collision
-                ball.y = pointY 
-                ball.dx = -ball.dx
-
-                return
-            }
-        }
+    if (checkCollideBricks(dt) == true) {
+        return
     }
-    
     
     // paddle collision if ball going down -- maybe check y below certain point
     if (ball.dy > 0 && ball.y > paddle.y - ballDim - 1) {
@@ -1031,6 +902,132 @@ function checkCollideBorders() {
         ball.dy = -ball.dy
         // gSounds['wall-hit']:play()
     }
+}
+
+function checkCollideBricks(dt: number): boolean {
+
+    // check for the top left point of the ball
+     for (const row of bricks) {
+        for (const brick of row) {
+
+            /* check BOTTOM */
+            line2X3 = brick.x - ballDim
+            line2Y3 = brick.y + elementsTileH
+
+            line2X4 = brick.x + elementsTileW
+            line2Y4 =  brick.y + elementsTileH
+
+            const bottomIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
+                line2X3, line2Y3, line2X4, line2Y4)
+
+            if (bottomIntersect) {
+
+                pointX = bottomIntersect.x
+                pointY = bottomIntersect.y
+                console.log("bottom brick", bottomIntersect)
+                brickCollision = true
+
+                collidedBrickX = brick.x
+                collidedBrickY = brick.y
+
+                // bounce down
+                ball.x = pointX
+                ball.y = pointY + 1 // remove collision
+                ball.dy = -ball.dy
+
+                return true
+            }
+
+            /* check TOP */
+            line2X3 = brick.x - ballDim
+            line2Y3 = brick.y - ballDim
+
+            line2X4 = brick.x + elementsTileW
+            line2Y4 =  brick.y - ballDim
+
+            const topIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
+                line2X3, line2Y3, line2X4, line2Y4)
+                
+            if (topIntersect) {
+
+                pointX = topIntersect.x
+                pointY = topIntersect.y
+
+                console.log('top brick', topIntersect)
+                brickCollision = true
+
+                collidedBrickX = brick.x
+                collidedBrickY = brick.y
+
+                // bounce up
+                ball.x = pointX
+                ball.y = pointY - 1 // remove collision
+                ball.dy = -ball.dy
+
+                return true
+            }
+            
+            /*  check LEFT */
+            line2X3 = brick.x - ballDim
+            line2Y3 = brick.y - ballDim
+
+            line2X4 = brick.x - ballDim
+            line2Y4 =  brick.y + elementsTileH
+
+            const leftIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
+                line2X3, line2Y3,  line2X4, line2Y4)
+
+            if (leftIntersect) {
+
+                pointX = leftIntersect.x
+                pointY = leftIntersect.y
+
+                console.log('left brick', leftIntersect)
+                brickCollision = true
+
+                collidedBrickX = brick.x
+                collidedBrickY = brick.y
+
+                // bounce left
+                ball.x = pointX - 1 // remove collision
+                ball.y = pointY
+                ball.dx = -ball.dx
+
+                return true
+            }
+
+            /* check RIGHT */
+            line2X3 = brick.x + elementsTileW
+            line2Y3 = brick.y - ballDim
+
+            line2X4 = brick.x + elementsTileW
+            line2Y4 =  brick.y + elementsTileH
+
+            const rightIntersect = segmentsIntersect(ball.x, ball.y, ball.x + ball.dx * dt, ball.y + ball.dy * dt,
+            line2X3, line2Y3,  line2X4, line2Y4)
+
+            if (rightIntersect) {
+
+                pointX = rightIntersect.x
+                pointY = rightIntersect.y
+
+                console.log('right brick', rightIntersect)
+                brickCollision = true
+
+                collidedBrickX = brick.x
+                collidedBrickY = brick.y
+
+                // bounce right
+                ball.x = pointX + 1 // remove collision
+                ball.y = pointY 
+                ball.dx = -ball.dx
+
+                return true
+            }
+        }
+    }
+
+    return false
 }
 
 
