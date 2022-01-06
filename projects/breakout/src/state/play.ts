@@ -17,6 +17,40 @@ type Paddle = {
 
 }
 
+
+type CollisionLine = {
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
+}
+
+type CollisionPoint = {
+    x: number,
+    y: number
+}
+
+type CollisionInfo = {
+    line: CollisionLine,
+    point: CollisionPoint
+}
+
+let paddleCollisions: {
+    top?: CollisionInfo,
+    bottom?: CollisionInfo,
+    left?: CollisionInfo,
+    right?: CollisionInfo
+}
+
+let stopPaddleCollision: {
+    top?: boolean,
+    bottom?: boolean,
+    left?: boolean,
+    right?: boolean
+}
+
+
+
 let paddle: Paddle
 
 let serveState = true;
@@ -42,6 +76,13 @@ let brickCollision = false
 let paddleCollision = false
 
 let paddleAABB = false
+
+let capturedBallInfo: {
+    x: number,
+    y: number,
+    dx: number,
+    dy: number
+}
 
 // collision drawings
 
@@ -88,6 +129,7 @@ export const play: State = {
             dy: 0
         }
 
+        /* DEBUG setup */
 
         // values to trigger aabb collision
 
@@ -96,11 +138,11 @@ export const play: State = {
         paddle.dx = 0
 
         ball.x = 197.16666666666632
-        ball.y = 224
+        ball.y = 150
 
         ball.y -= 10
 
-        ball.dx = 70
+        ball.dx = 100
         ball.dy = 60
 
         // values to trigger aabb collision
@@ -118,9 +160,10 @@ export const play: State = {
         // ball.dy = 60
 
 
-        
-
         serveState = false
+
+
+        /* DEBUG setup END */
 
 
         const rowGap = 6
@@ -139,6 +182,12 @@ export const play: State = {
             // return
         }
         if (paddleAABB) {
+            // return
+        }
+
+        if (paddleCollisions && paddleCollisions.top) {
+            
+            // console.log('stop on paddle collision top', paddleCollisions.top)
             // return
         }
 
@@ -197,12 +246,12 @@ export const play: State = {
 
             const magnitude = 1
 
-            line1X1 = capture.x
-            line1Y1 = capture.y
-            line1X2 = capture.x + capture.dx * loopStep * magnitude
-            line1Y2 = capture.y + capture.dy * loopStep * magnitude
+            line1X1 = capturedBallInfo.x
+            line1Y1 = capturedBallInfo.y
+            line1X2 = capturedBallInfo.x + capturedBallInfo.dx * loopStep * magnitude
+            line1Y2 = capturedBallInfo.y + capturedBallInfo.dy * loopStep * magnitude
 
-            drawBall(ctx, ball.index, capture.x, capture.y)
+            drawBall(ctx, ball.index, capturedBallInfo.x, capturedBallInfo.y)
 
             ctx.strokeStyle = "pink"
             ctx.beginPath();
@@ -263,6 +312,79 @@ export const play: State = {
 
             
         }
+
+
+        if (paddleCollisions) {
+
+         
+            let line: CollisionLine | undefined;
+            let point: CollisionPoint | undefined;
+            
+            if (paddleCollisions.top) {
+                
+
+                line = paddleCollisions.top.line
+
+                point = paddleCollisions.top.point
+            
+            }
+
+            if (paddleCollisions.bottom) {
+
+                line = paddleCollisions.bottom.line
+
+                point = paddleCollisions.bottom.point
+            
+            }
+            if (paddleCollisions.left) {
+
+                line = paddleCollisions.left.line
+
+                point = paddleCollisions.left.point
+            
+            }
+
+            if (paddleCollisions.right) {
+
+                line = paddleCollisions.right.line
+
+                point = paddleCollisions.right.point
+            
+            }
+
+            if (line && point) {
+
+                ctx.strokeStyle = "red"
+                ctx.strokeRect(capturedBallInfo.x, capturedBallInfo.y, ball.w, ball.h)
+
+                const magnitude = 10
+
+                line1X1 = capturedBallInfo.x
+                line1Y1 = capturedBallInfo.y
+                line1X2 = capturedBallInfo.x + capturedBallInfo.dx * loopStep * magnitude
+                line1Y2 = capturedBallInfo.y + capturedBallInfo.dy * loopStep * magnitude
+    
+                ctx.strokeStyle = "pink"
+                ctx.beginPath();
+                ctx.moveTo(line1X1, line1Y1)
+                ctx.lineTo(line1X2, line1Y2)
+                ctx.stroke();
+
+                ctx.strokeStyle = "white"
+                ctx.beginPath();
+                ctx.moveTo(line.x1, line.y1)
+                ctx.lineTo(line.x2, line.y2)
+                ctx.stroke();
+        
+        
+                ctx.fillStyle = "green"
+                ctx.beginPath()
+                ctx.arc(point.x, point.y, 2, 0, 2*Math.PI)
+                ctx.fill()
+            }
+
+
+        }
     },
 
 
@@ -294,6 +416,7 @@ export const play: State = {
             brickCollision = false
             paddleCollision = false
             paddleAABB = false
+            paddleCollisions = {}
             console.log("toggle stop", brickCollision)
         }
     },
@@ -320,6 +443,8 @@ function updatePaddle(paddle: Paddle, dt: number) {
 }
 
 function updateBall(dt: number) {
+
+    paddleCollisions = {}
 
     brickCollision = false
     paddleCollision = false
@@ -483,6 +608,23 @@ function updateBall(dt: number) {
             
         if (topIntersect) {
 
+            // paddleCollisions = {
+            //     top: {
+            //         line: {
+            //             x1: paddle.x - ballDim,
+            //             y1: paddle.y - ballDim,
+            //             x2: paddle.x + paddle.w,
+            //             y2: paddle.y - ballDim
+
+    
+            //         },
+            //         point: {
+            //             x: topIntersect.x,
+            //             y: topIntersect.y
+            //         }
+            //     }
+            // }
+
             pointX = topIntersect.x
             pointY = topIntersect.y
 
@@ -505,6 +647,24 @@ function updateBall(dt: number) {
 
             pointX = topIntersectBefore.x
             pointY = topIntersectBefore.y
+
+
+            // paddleCollisions = {
+            //     top: {
+            //         line: {
+            //             x1: paddle.x - ballDim,
+            //             y1: paddle.y - ballDim,
+            //             x2: paddle.x + paddle.w,
+            //             y2: paddle.y - ballDim
+
+    
+            //         },
+            //         point: {
+            //             x: topIntersectBefore.x,
+            //             y: topIntersectBefore.y
+            //         }
+            //     }
+            // }
 
             console.log('top paddle before', topIntersectBefore)
             paddleCollision = true
@@ -535,6 +695,23 @@ function updateBall(dt: number) {
          if (leftIntersect) {
 
 
+            // paddleCollisions = {
+            //     left: {
+            //         line: {
+            //             x1: paddle.x - ballDim,
+            //             y1: paddle.y - ballDim,
+            //             x2: paddle.x - ballDim,
+            //             y2:  paddle.y + sideBorderH
+
+    
+            //         },
+            //         point: {
+            //             x: leftIntersect.x,
+            //             y: leftIntersect.y
+            //         }
+            //     }
+            // }
+
              pointX = leftIntersect.x
              pointY = leftIntersect.y
 
@@ -554,6 +731,24 @@ function updateBall(dt: number) {
             line2X3, line2Y3,  line2X4, line2Y4)
 
         if (leftIntersectBefore) {
+
+
+            // paddleCollisions = {
+            //     left: {
+            //         line: {
+            //             x1: paddle.x - ballDim,
+            //             y1: paddle.y - ballDim,
+            //             x2: paddle.x - ballDim,
+            //             y2:  paddle.y + sideBorderH
+
+    
+            //         },
+            //         point: {
+            //             x: leftIntersectBefore.x,
+            //             y: leftIntersectBefore.y
+            //         }
+            //     }
+            // }
 
 
             pointX = leftIntersectBefore.x
@@ -590,8 +785,25 @@ function updateBall(dt: number) {
          if (rightIntersect) {
 
 
-             pointX = rightIntersect.x
-             pointY = rightIntersect.y
+            // paddleCollisions = {
+            //     right: {
+            //         line: {
+            //             x1: paddle.x + paddle.w,
+            //             y1: paddle.y - ballDim,
+            //             x2: paddle.x + paddle.w,
+            //             y2:  paddle.y + sideBorderH
+
+    
+            //         },
+            //         point: {
+            //             x: rightIntersect.x,
+            //             y: rightIntersect.y
+            //         }
+            //     }
+            // }
+
+            pointX = rightIntersect.x
+            pointY = rightIntersect.y
 
              console.log('right paddle', rightIntersect)
              paddleCollision = true
@@ -610,6 +822,23 @@ function updateBall(dt: number) {
             line2X3, line2Y3,  line2X4, line2Y4)
 
          if (rightIntersectBefore) {
+
+            // paddleCollisions = {
+            //     right: {
+            //         line: {
+            //             x1: paddle.x + paddle.w,
+            //             y1: paddle.y - ballDim,
+            //             x2: paddle.x + paddle.w,
+            //             y2:  paddle.y + sideBorderH
+
+    
+            //         },
+            //         point: {
+            //             x: rightIntersectBefore.x,
+            //             y: rightIntersectBefore.y
+            //         }
+            //     }
+            // }
 
 
              pointX = rightIntersectBefore.x
@@ -633,82 +862,358 @@ function updateBall(dt: number) {
         if (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, ball.x, ball.y, ball.w, ball.h)) {
 
             console.log('aabb paddle')
-            console.log('paddle', paddle)
-            console.log('ball', ball)
-            paddleAABB = true
-            capture = {
+            console.log('paddle', JSON.stringify(paddle))
+            console.log('ball', JSON.stringify(ball))
+            // paddleAABB = true
+            capturedBallInfo = {
                 x: ball.x,
                 y: ball.y,
                 dx: ball.dx,
                 dy: ball.dy
             }
 
-            console.log('capture', capture)
+            console.log('capture', capturedBallInfo)
 
             console.log('resolve aabb', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
 
-            let  rewind = 0;
 
-            do {
-                rewind++
-                ball.x -= ball.dx * dt
-                ball.y -= ball.dy * dt
-            } while (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, ball.x, ball.y, ball.w, ball.h))
+             // number of rewind
+             let rewind = 0;
 
-            console.log('rewinded', rewind)
-            // rewind to not be colliding
+             // find previous position where no collision
 
-            // if ball above and between paddle
-            if (ball.y + ball.h <= paddle.y && (ball.x + ball.w >= paddle.x || ball.x <= paddle.x + paddle.w)) {
-
-                console.log('response up', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
-                ball.y = paddle.y - ballDim
-                ball.dy = -ball.dy
-
-                return
-            }
+             let noCollision : {x: number, y: number} = {
+                 x: ball.x,
+                 y: ball.y
+             }
+ 
+             do {
+                 rewind++
+                 // ball.x -= ball.dx * dt
+                 // ball.y -= ball.dy * dt
+                 noCollision.x -= ball.dx * dt
+                 noCollision.y -= ball.dy * dt
+             } while (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, noCollision.x, noCollision.y, ball.w, ball.h))
 
 
-            // if ball on the left
-            if (ball.x + ball.w < paddle.x) {
+             console.log('rewinded', rewind)
+             console.log('point of no collision', noCollision)
 
-                // go left
-                ball.dx = -Math.abs(ball.dx)
-                // check if above mid-level -> go up 
-                // invert dx
-                if (ball.y <= paddle.y + sideBorderH) {
-                    ball.dy = -ball.dy
+             line2X3 = paddle.x - ball.w
+             line2Y3 =  paddle.y
+             line2X4 = paddle.x + paddle.w
+             line2Y4 = paddle.y
+             const topIntersect = segmentsIntersect(ball.x, ball.y, noCollision.x, noCollision.y,
+                line2X3, line2Y3,  line2X4, line2Y4)
+
+            if (topIntersect) {
+
+                paddleCollisions = {
+                    top: {
+                        line: {
+                            x1: line2X3,
+                            y1: line2Y3,
+                            x2: line2X4,
+                            y2: line2Y4
+    
+        
+                        },
+                        point: {
+                            x: topIntersect.x,
+                            y: topIntersect.y
+                        }
+                    }
                 }
-                console.log('response left', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
-                return
 
+                
+                console.log('ball intercepted top side')
+                const maxDisplacement = 5
+                const displacement = Math.abs(topIntersect.x - ball.x)
+                const resultDisplacement = Math.min(maxDisplacement, Math.abs(topIntersect.x - ball.x) / 2)
+                console.log('displace by', resultDisplacement)
+
+                // rewind
+                ball.x += -Math.sign(ball.dx) * resultDisplacement
+
+                // ball.x = (topIntersect.x + ball.x) / 2 // place at middle because if ball entered too much from the side, replace far away -- looks weird
+                ball.y = topIntersect.y - ball.h
+                ball.dy = -Math.abs(ball.dy) // go up
+                return
             }
 
-            // if ball on the right
-            if (ball.x > paddle.x + paddle.w) {
-                // go right
-                ball.dx = Math.abs(ball.dx)
 
-                // check if above mid-level -> go up 
-                // invert dx
+            line2X3 = paddle.x
+            line2Y3 =  paddle.y - ball.h
+            line2X4 = paddle.x
+            line2Y4 = paddle.y + paddle.h
 
-                if (ball.y <= paddle.y + sideBorderH) {
-                    ball.dy = -ball.dy
+            const leftIntersect = segmentsIntersect(ball.x, ball.y, noCollision.x, noCollision.y,
+                line2X3, line2Y3,  line2X4, line2Y4)
+
+            if (leftIntersect) {
+
+                paddleCollisions = {
+                    left: {
+                        line: {
+                            x1: line2X3,
+                            y1: line2Y3,
+                            x2: line2X4,
+                            y2: line2Y4
+        
+                        },
+                        point: {
+                            x: leftIntersect.x,
+                            y: leftIntersect.y
+                        }
+                    }
                 }
-                console.log('response right', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
+
+                console.log('ball intercepted left side')
+                ball.x = leftIntersect.x - ball.w
+                ball.y = leftIntersect.y
+
+                ball.dx = -Math.abs(ball.dx) // go left
+
+                if (ball.y <= paddle.y + paddle.h /2) { // if saveable
+                    ball.dy = -Math.abs(ball.dy) // go up
+                }
                 return
             }
 
-            // dead code if ball is saveable 
-            if (ball.y <= paddle.y + sideBorderH) {
-                ball.y = paddle.y - ballDim
-                ball.dy = -ball.dy
-                return
 
-            } else {
-                console.log("ignore collision")
-                // debugger
+            line2X3 = paddle.x + paddle.w
+            line2Y3 =  paddle.y - ball.h
+            line2X4 = paddle.x + paddle.w
+            line2Y4 = paddle.y + paddle.h
+
+
+            const rightIntersect = segmentsIntersect(ball.x, ball.y, noCollision.x, noCollision.y,
+                line2X3, line2Y3,  line2X4, line2Y4)
+
+            if (rightIntersect) {
+
+                paddleCollisions = {
+                    left: {
+                        line: {
+                            x1: line2X3,
+                            y1: line2Y3,
+                            x2: line2X4,
+                            y2: line2Y4
+        
+                        },
+                        point: {
+                            x: rightIntersect.x,
+                            y: rightIntersect.y
+                        }
+                    }
+                }
+
+                console.log('ball intercepted right side')
+                ball.x = rightIntersect.x
+                ball.y = rightIntersect.y
+
+                ball.dx = Math.abs(ball.dx) // go right
+
+                if (ball.y <= paddle.y + paddle.h /2) { // if saveable
+                    ball.dy = -Math.abs(ball.dy) // go up
+                }
+                return
             }
+
+            console.error()
+
+            // ---------------------------------------
+
+             
+            // if (noCollisionY + ball.h <= paddle.h) { // above
+            
+            //     const topIntersect = segmentsIntersect(ball.x, ball.y, noCollisionX, noCollisionY,
+            // paddle.x, paddle.y,  paddle.x + paddle.w, paddle.y)
+            
+            // }
+
+            // if (ball.dx >= 0 && noCollisionX + ball.w <= paddle.x) {
+
+            //     const leftIntersect = segmentsIntersect(ball.x, ball.y, noCollisionX, noCollisionY,
+            //         paddle.x, paddle.y,  paddle.x, paddle.y + paddle.y + paddle.h)
+
+            // }
+
+            // if (ball.dx <= 0 && noCollisionX >= paddle.x + paddle.w) {
+
+
+            //     const rightInterset = segmentsIntersect(ball.x, ball.y, noCollisionX, noCollisionY,
+            //         paddle.x + paddle.w, paddle.y,  paddle.x + paddle.w, paddle.y + paddle.y + paddle.h)
+
+            // }
+
+            //  if (ball.x > paddle.x && ball.x - ball.w <= paddle.x + paddle.w) {
+            //     console.log('ball within paddle sides')
+
+            //     if (ball.y + ball.h <= paddle.y) {
+            //         console.log('ball has collided on top')
+            //     }
+            //  }
+             // state of no collision
+
+
+
+             
+            /*
+
+                if ball exceeds lowest point of paddle
+
+                if ball below mid-paddle and between sides - let pass
+
+
+                if ball below mid-paddle and on left - change dx to show collision but lose anyway
+                if ball below mid-paddle and on right - change dx to show collision but lose anyway
+
+
+                
+            */
+           /*
+            find cases where no resolution needed and let ball fall
+
+                ball within sides but past mid-height
+            */
+            // if (ball.x > paddle.x && ball.x - ball.w <= paddle.x + paddle.w) {
+            //     console.log('ball within paddle sides')
+
+            //     if (ball.y > paddle.y + paddle.h / 2) {
+            //         console.log('ball exceeds mid-height - no response')
+            //         return
+            //     }
+
+                // console.log('begin resolve top collision')
+
+                // // number of rewind
+                // let  rewind = 0;
+
+                // // find previous position where no collision
+                // let noCollisionX = ball.x;
+                // let noCollisionY = ball.y;
+
+                // do {
+                //     rewind++
+                //     noCollisionX -= ball.dx * dt
+                //     noCollisionY -= ball.dy * dt
+                // } while (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, noCollisionX, noCollisionY, ball.w, ball.h))
+
+                // console.log('rewinded to resolve top collision', rewind)
+
+
+                // const topIntersect = segmentsIntersect(ball.x, ball.y, noCollisionX, noCollisionY,
+                //             paddle.x - ball.w, paddle.y,  paddle.x + paddle.w, paddle.y)
+
+                // if (topIntersect) {
+
+                //     ball.x = topIntersect.x
+                //     ball.y = paddle.y - ballDim
+                //     ball.dy = - Math.abs(ball.dy)
+
+                //     console.log('end resolve top collision', JSON.stringify(ball))
+                //     return
+
+                // } else {
+                //     console.error('cannot resolve')
+                //     return
+                // }
+            // }
+
+
+
+
+            // if (ball.dx >= 0) {
+
+            // }
+            //  // if ball above and between paddle
+            //  if (ball.y + ball.h <= paddle.y && (ball.x + ball.w >= paddle.x || ball.x <= paddle.x + paddle.w)) {
+
+            //     console.log('response up', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
+            //     ball.y = paddle.y - ballDim
+            //     ball.dy = -ball.dy
+
+            //     return
+            // }
+
+            // console.log('rewinded', rewind)
+            // // rewind to not be colliding
+
+
+            // if (noCollisionY + ball.h <= paddle.h) { // above
+            
+            //     const topIntersect = segmentsIntersect(ball.x, ball.y, noCollisionX, noCollisionY,
+            // paddle.x, paddle.y,  paddle.x + paddle.w, paddle.y)
+            
+            // }
+
+            // if (ball.dx >= 0 && noCollisionX + ball.w <= paddle.x) {
+
+            //     const leftIntersect = segmentsIntersect(ball.x, ball.y, noCollisionX, noCollisionY,
+            //         paddle.x, paddle.y,  paddle.x, paddle.y + paddle.y + paddle.h)
+
+            // }
+
+            // if (ball.dx <= 0 && noCollisionX >= paddle.x + paddle.w) {
+
+
+            //     const rightInterset = segmentsIntersect(ball.x, ball.y, noCollisionX, noCollisionY,
+            //         paddle.x + paddle.w, paddle.y,  paddle.x + paddle.w, paddle.y + paddle.y + paddle.h)
+
+            // }
+
+            // // if ball above and between paddle
+            // if (ball.y + ball.h <= paddle.y && (ball.x + ball.w >= paddle.x || ball.x <= paddle.x + paddle.w)) {
+
+            //     console.log('response up', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
+            //     ball.y = paddle.y - ballDim
+            //     ball.dy = -ball.dy
+
+            //     return
+            // }
+
+
+            // // if ball on the left
+            // if (ball.x + ball.w < paddle.x) {
+
+            //     // go left
+            //     ball.dx = -Math.abs(ball.dx)
+            //     // check if above mid-level -> go up 
+            //     // invert dx
+            //     if (ball.y <= paddle.y + sideBorderH) {
+            //         ball.dy = -ball.dy
+            //     }
+            //     console.log('response left', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
+            //     return
+
+            // }
+
+            // // if ball on the right
+            // if (ball.x > paddle.x + paddle.w) {
+            //     // go right
+            //     ball.dx = Math.abs(ball.dx)
+
+            //     // check if above mid-level -> go up 
+            //     // invert dx
+
+            //     if (ball.y <= paddle.y + sideBorderH) {
+            //         ball.dy = -ball.dy
+            //     }
+            //     console.log('response right', currentFrame, JSON.stringify(ball), JSON.stringify(paddle))
+            //     return
+            // }
+
+            // // dead code if ball is saveable 
+            // if (ball.y <= paddle.y + sideBorderH) {
+            //     ball.y = paddle.y - ballDim
+            //     ball.dy = -ball.dy
+            //     return
+
+            // } else {
+            //     console.log("ignore collision")
+            //     // debugger
+            // }
 
         }
 
@@ -718,12 +1223,7 @@ function updateBall(dt: number) {
     ball.y += ball.dy * dt
 }
 
-let capture: {
-    x: number,
-    y: number,
-    dx: number,
-    dy: number
-}
+
 
 function checkCollideBorders() {
     // allow ball to bounce off walls
