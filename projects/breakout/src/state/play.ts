@@ -535,13 +535,106 @@ function updateBall(dt: number) {
 
         if (ballPaddleSegmentIntersection(dt) == true) { return }
 
+        if (ballPaddleAABBCollisionBackStep(dt) == true) { 
+            
+            let ballSpeed = Math.sqrt(Math.pow(ball.dx, 2) + Math.pow(ball.dy, 2))
+
+            if (ballSpeed > 200) {
+                console.log('throttle ball speed after backstep collision')
+
+                ball.dx = (ball.dx / ballSpeed) * 200 
+                ball.dy = (ball.dy / ballSpeed) * 200 
+            }
+            return 
         
-        
-        if (ballPaddleAABBCollision(dt) == true) { return }
+        }
     }
 
     ball.x += ball.dx * dt
     ball.y += ball.dy * dt
+
+
+    let ballSpeed = Math.sqrt(Math.pow(ball.dx, 2) + Math.pow(ball.dy, 2))
+
+    if (ballSpeed > 200) {
+        console.log('throttle ball speed')
+
+        ball.dx = (ball.dx / ballSpeed) * 200 
+        ball.dy = (ball.dy / ballSpeed) * 200 
+    }
+}
+
+
+function ballPaddleAABBCollisionBackStep(dt: number): boolean {
+
+    if (collisionAABB(paddle.x, paddle.y, paddle.w, paddle.h, ball.x, ball.y, ball.w, ball.h)) {
+
+        console.log('aabb paddle backstep', currentFrame)
+        console.log('paddle', JSON.stringify(paddle), "ball", JSON.stringify(ball))
+
+        if (paddleMoveX == 0) {
+            console.log('cannot rewind - paddle did not move', paddleMoveX)
+            return false
+        }
+        
+        let paddlePositionXWithNoCollision = paddle.x
+        let backStep = 0
+        let moveToRewind = paddleMoveX / 4
+        do {
+            paddlePositionXWithNoCollision -= moveToRewind
+            backStep++
+        } while (collisionAABB(paddlePositionXWithNoCollision, paddle.y, paddle.w, paddle.h,
+             ball.x, ball.y, ball.w, ball.h))
+
+        console.log('backstepped', backStep)
+        
+
+        if (ball.x + ball.w <= paddlePositionXWithNoCollision) { // on the left
+
+            paddle.x = paddlePositionXWithNoCollision
+            console.log('ball intercepted left side')
+            ball.x =  paddlePositionXWithNoCollision - ball.w - 1
+            ball.dx = -Math.abs(ball.dx) * 1.5 // go left
+
+            if (ball.y <= paddle.y + paddle.h /2) { // if saveable
+                ball.dy = -Math.abs(ball.dy) // go up
+            } else {
+                ball.y = paddle.y + paddle.h + 1
+                console.log("right side but not saveable", "ball",  JSON.stringify(ball))
+            }
+
+            ball.dy *= 1.2
+            paddle.x -= paddleMoveX
+
+            return true
+        }
+
+        if (ball.x >= paddlePositionXWithNoCollision + paddle.w) { // on the right
+
+            paddle.x = paddlePositionXWithNoCollision
+
+            console.log('ball intercepted right side')
+
+            ball.x =  paddlePositionXWithNoCollision + paddle.w + 1
+            ball.dx = Math.abs(ball.dx) * 1.5 // go right
+
+            if (ball.y <= paddle.y + paddle.h /2) { // if saveable
+                ball.dy = -Math.abs(ball.dy) // go up
+            } else {
+                ball.y = paddle.y + paddle.h + 1
+                console.log("right side but not saveable", "ball",  JSON.stringify(ball))
+            }
+
+            ball.dy *= 1.2
+            paddle.x -= paddleMoveX
+
+            return true
+        }
+
+        console.error("canno resolve with backtracking paddle")
+    }
+
+    return false
 }
 
 function ballPaddleAABBCollision(dt: number): boolean {
@@ -675,7 +768,6 @@ function ballPaddleAABBCollision(dt: number): boolean {
         line2Y3 = paddle.y - ball.h
         line2X4 = paddle.x + paddle.w
         line2Y4 = paddle.y + paddle.h
-
         const rightIntersect = segmentsIntersect(ball.x, ball.y, noCollisionBallPoint.x, noCollisionBallPoint.y,
             line2X3, line2Y3,  line2X4, line2Y4)
 
@@ -1224,4 +1316,9 @@ function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] 
 
     return res
 
+}
+
+
+function distanceSquared(x1: number, y1: number, x2: number, y2: number): number {
+    return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)
 }
