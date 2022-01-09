@@ -3,17 +3,17 @@ import { debug, info } from "./log";
 /**
  * CALLBACKS
  */
-let update: (dt: number) => void;
+let update: (dt: number) => void = () => {}
 export function setUpdate(callback: (dt: number) => void) {
   update = callback;
 }
 
-let draw: () => void;
+let draw: () => void = () => {}
 export function setDraw(callback: () => void) {
   draw = callback;
 }
 
-let processInput: () => void;
+let processInput: () => void = () => {}
 export function setProcessInput(callback: () => void) {
   processInput = callback;
 }
