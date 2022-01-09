@@ -207,11 +207,12 @@ export const play: State = {
             }
             // console.log('ball update', ball)
             // console.log('paddle update', paddle)
+            
+            if (paddleCollisions && Object.keys(paddleCollisions).length > 0) {
+                return
+            }
         }
 
-        if (paddleCollisions && Object.keys(paddleCollisions).length > 0) {
-            return
-        }
 
         updatePaddle(paddle, dt)
         updateBall(dt)

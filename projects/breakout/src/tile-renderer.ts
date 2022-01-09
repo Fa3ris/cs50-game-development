@@ -1,5 +1,7 @@
 import { loadImage } from "~common/image-utils";
 
+
+const debug = false;
 export enum PaddleColor {
   BLUE,
   GREEN,
@@ -123,10 +125,12 @@ export function drawBall(ctx: CanvasRenderingContext2D, index: number, x: number
   const xSheetOffset = tilesInfos[21].x * elementsTileW + xBallOffset
   const ySheetOffset = tilesInfos[21].y * elementsTileH + yBallOffset
   
-  console.log('x ball offset', xBallOffset)
-  console.log('xoffset', xSheetOffset)
-  console.log('y ball offset', yBallOffset)
-  console.log('yoffset', ySheetOffset)
+  if (debug) {
+    console.log('x ball offset', xBallOffset)
+    console.log('xoffset', xSheetOffset)
+    console.log('y ball offset', yBallOffset)
+    console.log('yoffset', ySheetOffset)
+  }
 
 
   ctx.drawImage(sprites["elements"],
