@@ -41,6 +41,16 @@ class Vector2D {
   }
 }
 
+class Ray {
+  origin: Point2D
+  direction: Vector2D
+
+  constructor(origin: Point2D, direction: Vector2D) {
+    this.origin = origin
+    this.direction = direction
+  }
+}
+
 class AABB {
   x: number
   y: number
@@ -101,6 +111,8 @@ let collisionInfo: AABBPointCollision | undefined
 const horizontalMotion = linearUpdate(new Vector2D(45, 50), new Vector2D(95, 50))
 const verticalMotion = linearUpdate(new Vector2D(75, 35), new Vector2D(75, 65))
 
+
+const ray = new Ray(new Vector2D(10, 10), new Vector2D(50, 50))
 
 function update(dt: number) {
 
@@ -229,6 +241,8 @@ function draw() {
   ctx.fillStyle = "#000"
   ctx.fillRect(0, 0, W, H)
 
+  drawRay(ray)
+
   if (collisionInfo) {
     drawPoint(collisionInfo.collisionPoint, "green")
     drawPoint(point, "yellow")
@@ -304,3 +318,21 @@ function drawAABB(aabb: AABB, strokeColor: string = "white") {
   ctx.lineWidth = .1
   ctx.strokeRect(aabb.x, aabb.y, aabb.w, aabb.h)
 }
+
+function drawRay(ray: Ray, strokeColor: string = "white") {
+
+  ctx.strokeStyle = strokeColor
+  ctx.beginPath()
+  ctx.moveTo(ray.origin.x, ray.origin.y)
+
+  ctx.lineTo(ray.origin.x + ray.direction.x, ray.origin.y + ray.direction.y)
+
+  ctx.stroke()
+
+  drawPoint(ray.origin, "fuchsia")
+}
+
+
+// calculate normal vectors of segment - 2 possible directions
+// If we define dx = x2 - x1 and dy = y2 - y1, then the normals are (-dy, dx) and (dy, -dx)
+// https://stackoverflow.com/questions/1243614/how-do-i-calculate-the-normal-vector-of-a-line-segment
