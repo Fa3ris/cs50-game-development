@@ -1,6 +1,6 @@
 
 import { adjustCanvasForDisplay } from "~common/canvas-util";
-import { setDraw, setUpdate, start} from "~common/loop";
+import { currentFrame, setDraw, setUpdate, start} from "~common/loop";
 
 const ctx = createCtx2D("point-collision")
 
@@ -93,22 +93,31 @@ const PI = Math.PI
 const cos = Math.cos
 const sin = Math.sin
 
-const updatePoint = createSinUpdate(startPoint, point)
+const updatePointSin = createSinUpdate(startPoint, point)
 
-let colliding = false;
 let collisionInfo: AABBPointCollision | undefined
+
+
+const horizontalMotion = linearUpdate(new Vector2D(45, 50), new Vector2D(95, 50))
+const verticalMotion = linearUpdate(new Vector2D(75, 35), new Vector2D(75, 65))
+
 
 function update(dt: number) {
 
-  // if (collisionInfo && point.y < 45 + 7) {
-  //   return
-  // }
+  if (currentFrame < 10) console.log("update frame", currentFrame)
 
-  updatePoint(dt)
+  if (false && collisionInfo && point.y < 45 + 7) {
+    return
+  }
+
+  horizontalMotion.update(dt)
+  verticalMotion.update(dt)
+
+  updatePointSin(dt)
 
   // FIXME  if exactly on center cannot give which shift to make to exit
-  point.x = aabb.center.x
-  point.y = aabb.center.y
+  // point.x = aabb.center.x
+  // point.y = aabb.center.y
 
   const collide = checkAABBPoint(aabb, point)
 
@@ -116,6 +125,46 @@ function update(dt: number) {
 
 }
 
+
+function linearUpdate(startPoint: Point2D, endPoint: Point2D): {
+  point: Point2D,
+  update: (dt: number) => void
+
+} {
+
+  let direction: 1 | -1 = 1
+  let t = 0
+
+  const step = .01
+  const point = new Vector2D(startPoint.x, startPoint.y)
+
+  const update = (dt: number) => {
+    if (direction > 0) {
+      t += step
+  
+      if (t >= 1) {
+        direction = -1
+        // skipping = true
+      }
+    } else {
+  
+      t -= step
+  
+      if (t <= 0) {
+        direction = 1
+        // skipping = true
+      }
+  
+    }
+  
+    point.x = startPoint.x + t * (endPoint.x - startPoint.x) 
+    point.y = startPoint.y + t * (endPoint.y - startPoint.y) 
+
+  }
+
+
+  return {point, update}
+}
 
 function createSinUpdate(startPoint: Point2D, point: Point2D): (dt: number) => void {
 
@@ -172,37 +221,34 @@ function createSinUpdate(startPoint: Point2D, point: Point2D): (dt: number) => v
 ctx.font = "12px courier"
 ctx.textBaseline = "top"
 
-ctx.lineWidth = .1
-ctx.strokeStyle = "white"
 
 function draw() {
+
+  if (currentFrame < 10) console.log("draw frame", currentFrame)
 
   ctx.fillStyle = "#000"
   ctx.fillRect(0, 0, W, H)
 
   if (collisionInfo) {
-    ctx.strokeStyle = "red"
-    ctx.fillStyle = "green"
-    // POINT
-    ctx.fillRect(collisionInfo.collisionPoint.x, collisionInfo.collisionPoint.y, 1, 1)
-    ctx.fillStyle = "yellow"
+    drawPoint(collisionInfo.collisionPoint, "green")
+    drawPoint(point, "yellow")
+    drawAABB(aabb, "red")
   } else {
-    ctx.strokeStyle = "white"
-    ctx.fillStyle = "white"
+    drawPoint(point, "white")
+    drawAABB(aabb, "white")
   }
 
-  // POINT
-  ctx.fillRect(point.x, point.y, 1, 1)
 
-  // AABB
-  ctx.strokeRect(aabb.x, aabb.y, aabb.w, aabb.h)
+    drawPoint(horizontalMotion.point, "blue")
+    drawPoint(verticalMotion.point, "pink")
 
   ctx.fillStyle = "white"
   ctx.fillText(`point: (${point.x.toFixed(2)}, ${point.y.toFixed(2)})`, .5, .5)
 }
 
 type AABBPointCollision = {
-  collisionPoint: Point2D
+  collisionPoint: Point2D,
+  normal: Point2D
 }
 
 function checkAABBPoint(aabb: AABB, point: Point2D): AABBPointCollision | undefined {
@@ -215,29 +261,46 @@ function checkAABBPoint(aabb: AABB, point: Point2D): AABBPointCollision | undefi
     return undefined
   }
 
-  const distanceToCenterX = aabb.center.x - point.x
-  let dxToExit = aabb.halfW - Math.abs(distanceToCenterX)
-  if (distanceToCenterX > 0) { // if closest x exit is on the left -
+  const pointToCenterX = aabb.center.x - point.x
+  let dxToExit = aabb.halfW - Math.abs(pointToCenterX)
+  if (pointToCenterX > 0) { // if closest x exit is on the left
     dxToExit++ //  account for the point width = 1 because we draw point from top-left corner
   }
-  const distanceToCenterY = aabb.center.y - point.y
-  let dyToExit = aabb.halfH - Math.abs(distanceToCenterY) 
-  if (distanceToCenterY > 0) { // if closest x exit is on the top
+  const pointToCenterY = aabb.center.y - point.y
+  let dyToExit = aabb.halfH - Math.abs(pointToCenterY) 
+  if (pointToCenterY > 0) { // if closest y exit is on the top
     dyToExit++ //  account for the point height = 1 because we draw point from top-left corner
   }
 
   const collisionPoint = new Vector2D(point.x, point.y)
+  const normal = new Vector2D(0, 0)
 
   if (dxToExit < dyToExit) { // exit by x
-    collisionPoint.x -= Math.sign(distanceToCenterX) * dxToExit
+    collisionPoint.x -= Math.sign(pointToCenterX) * dxToExit
+    normal.x = -Math.sign(pointToCenterX)
   } else { // exit by y
-    collisionPoint.y -= Math.sign(distanceToCenterY) * dyToExit
+    collisionPoint.y -= Math.sign(pointToCenterY) * dyToExit
+    normal.y = -Math.sign(pointToCenterY)
   }
 
-  return {collisionPoint}
+  // console.log( {collisionPoint, normal})
+  return {collisionPoint, normal}
 }
 
 setUpdate(update)
 setDraw(draw)
 
 start()
+
+
+function drawPoint(point: Point2D, fillColor: string = "white") {
+  ctx.fillStyle = fillColor
+  ctx.fillRect(point.x, point.y, 1, 1)
+}
+
+
+function drawAABB(aabb: AABB, strokeColor: string = "white") {
+  ctx.strokeStyle = strokeColor
+  ctx.lineWidth = .1
+  ctx.strokeRect(aabb.x, aabb.y, aabb.w, aabb.h)
+}
