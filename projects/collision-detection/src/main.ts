@@ -79,9 +79,9 @@ type AABBPointCollision = {
   normal: Point2D;
 };
 
-// FIXME  if exactly on center cannot give which shift to make to exit
-// point.x = aabb.center.x
-// point.y = aabb.center.y
+
+const POINT_RADIUS = .5
+
 function checkAABBPoint(
   aabb: AABB,
   point: Point2D
@@ -95,28 +95,39 @@ function checkAABBPoint(
   }
 
   const pointToCenterX = aabb.center.x - point.x;
-  let dxToExit = aabb.halfW - Math.abs(pointToCenterX);
-  if (pointToCenterX > 0) { // if closest x exit is on the left
-    dxToExit++; //  account for the point width = 1 because we draw point from top-left corner
-  }
+  const xPenetration = aabb.halfW - Math.abs(pointToCenterX) // [0, halfW]
+  
   const pointToCenterY = aabb.center.y - point.y;
-  let dyToExit = aabb.halfH - Math.abs(pointToCenterY);
-  if (pointToCenterY > 0) { // if closest y exit is on the top
-    dyToExit++; //  account for the point height = 1 because we draw point from top-left corner
-  }
+  const yPenetration = aabb.halfH - Math.abs(pointToCenterY) // [0, halfH]
 
-  const collisionPoint = new Vector2D(point.x, point.y);
+  const additionalShift = POINT_RADIUS + .2
   const normal = new Vector2D(0, 0);
+  let collisionPoint: Point2D
+  if (xPenetration < yPenetration) { // exit by x
+    collisionPoint = new Vector2D(aabb.center.x, point.y);
+    if (pointToCenterX == 0) {
+      collisionPoint.x -= aabb.halfW + additionalShift // exit by left
+      normal.x = -1
+    } else {
+      const signX = Math.sign(pointToCenterX)
+      collisionPoint.x -= signX * (aabb.halfW + additionalShift)
+      normal.x = -signX
+    }
 
-  if (dxToExit < dyToExit) { // exit by x
-    collisionPoint.x -= Math.sign(pointToCenterX) * dxToExit;
-    normal.x = -Math.sign(pointToCenterX);
   } else { // exit by y
-    collisionPoint.y -= Math.sign(pointToCenterY) * dyToExit;
-    normal.y = -Math.sign(pointToCenterY);
+    collisionPoint = new Vector2D(point.x, aabb.center.y);
+    if (pointToCenterY == 0) {
+      collisionPoint.y -= aabb.halfH + additionalShift // exit by the top
+      normal.y = -1
+    } else {
+      const signY = Math.sign(pointToCenterY)
+      collisionPoint.y -= signY * (aabb.halfH + additionalShift)
+      normal.y = -signY
+    }
   }
 
   return { collisionPoint, normal };
+
 }
 
 // RUN EXAMPLES
@@ -157,7 +168,16 @@ function pointCollisionWave() {
       return;
     }
 
+    if (false && collisionInfo) {
+      return;
+    }
+
     sinMotion.update(dt);
+
+    if (false) {
+      sinMotion.point.x = aabb.center.x
+      sinMotion.point.y = aabb.center.y - 1
+    }
 
     collisionInfo = checkAABBPoint(aabb, sinMotion.point);
   }
@@ -170,9 +190,9 @@ function pointCollisionWave() {
     ctx.fillRect(0, 0, W, H);
 
     if (collisionInfo) {
-      drawPoint(collisionInfo.collisionPoint, "green");
       drawPoint(sinMotion.point, "yellow");
       drawAABB(aabb, "red");
+      drawPoint(collisionInfo.collisionPoint, "green");
     } else {
       drawPoint(sinMotion.point, "white");
       drawAABB(aabb, "white");
@@ -376,7 +396,9 @@ function sinusoidalMotion(startPoint: Point2D): {
 function drawingFunctions(ctx: CanvasRenderingContext2D) {
   function drawPoint(point: Point2D, fillColor: string = "white") {
     ctx.fillStyle = fillColor;
-    ctx.fillRect(point.x, point.y, 1, 1);
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, POINT_RADIUS, 0, 2 * Math.PI);
+    ctx.fill();
   }
 
   function drawAABB(aabb: AABB, strokeColor: string = "white") {
