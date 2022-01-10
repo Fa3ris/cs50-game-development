@@ -7,6 +7,7 @@ import { createLoop } from "~common/loop";
 // https://stackoverflow.com/questions/1243614/how-do-i-calculate-the-normal-vector-of-a-line-segment
 
 const PI = Math.PI;
+const TAU = 2 * PI
 
 const cos = Math.cos;
 const sin = Math.sin;
@@ -387,7 +388,7 @@ function sinusoidalMotion(startPoint: Point2D): {
     }
 
     point.x = startPoint.x + xOffset;
-    point.y = startPoint.y + sin((xOffset * freq) / (PI * 2)) * waveAmplitude;
+    point.y = startPoint.y + sin((xOffset * freq) / TAU) * waveAmplitude;
   };
 
   return { point, update };
@@ -397,7 +398,7 @@ function drawingFunctions(ctx: CanvasRenderingContext2D) {
   function drawPoint(point: Point2D, fillColor: string = "white") {
     ctx.fillStyle = fillColor;
     ctx.beginPath();
-    ctx.arc(point.x, point.y, POINT_RADIUS, 0, 2 * Math.PI);
+    ctx.arc(point.x, point.y, POINT_RADIUS, 0, TAU);
     ctx.fill();
   }
 
