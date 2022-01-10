@@ -1,217 +1,25 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
+import { AABB, Point2D, AABBPointCollision, Vector2D, Ray } from "~common/geometry";
 import { createLoop } from "~common/loop";
+import { createCtx2D } from "./canvas";
+import { checkAABBPoint } from "./collision";
+import { drawingFunctions, POINT_RADIUS } from "./drawing";
+import { linearMotion, sinusoidalMotion } from "./motions";
+import { pointCollisionHorizontal } from "./point-aabb-horizontal";
+import { pointCollisionVertical } from "./point-aabb-vertical";
+import { pointCollisionWave } from "./point-aabb-wave";
 
 // TODO
 // calculate normal vectors of segment - 2 possible directions
 // If we define dx = x2 - x1 and dy = y2 - y1, then the normals are (-dy, dx) and (dy, -dx)
 // https://stackoverflow.com/questions/1243614/how-do-i-calculate-the-normal-vector-of-a-line-segment
 
-const PI = Math.PI;
-const TAU = 2 * PI
-
-const cos = Math.cos;
-const sin = Math.sin;
-
-type Point2D = Vector2D;
-
-class Vector2D {
-  x: number;
-  y: number;
-
-  constructor(x: number, y: number) {
-    this.x = x;
-    this.y = y;
-  }
-}
-
-class Ray {
-  origin: Point2D;
-  direction: Vector2D;
-
-  constructor(origin: Point2D, direction: Vector2D) {
-    this.origin = origin;
-    this.direction = direction;
-  }
-}
-
-class AABB {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-
-  top: number;
-  bottom: number;
-
-  left: number;
-  right: number;
-
-  min: Point2D;
-  max: Point2D;
-  center: Point2D;
-
-  halfW: number;
-  halfH: number;
-
-  constructor(x: number, y: number, w: number, h: number) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-
-    this.top = y;
-    this.bottom = y + h;
-
-    this.left = x;
-    this.right = x + w;
-
-    this.min = new Vector2D(x, y);
-    this.max = new Vector2D(x + w, y + h);
-
-    this.center = new Vector2D(x + w / 2, y + h / 2);
-
-    this.halfW = w / 2;
-    this.halfH = h / 2;
-  }
-}
-
-type AABBPointCollision = {
-  collisionPoint: Point2D;
-  normal: Point2D;
-};
-
-
-const POINT_RADIUS = .5
-
-function checkAABBPoint(
-  aabb: AABB,
-  point: Point2D
-): AABBPointCollision | undefined {
-  if (point.x < aabb.left || point.x > aabb.right) {
-    return undefined;
-  }
-
-  if (point.y < aabb.top || point.y > aabb.bottom) {
-    return undefined;
-  }
-
-  const pointToCenterX = aabb.center.x - point.x;
-  const xPenetration = aabb.halfW - Math.abs(pointToCenterX) // [0, halfW]
-  
-  const pointToCenterY = aabb.center.y - point.y;
-  const yPenetration = aabb.halfH - Math.abs(pointToCenterY) // [0, halfH]
-
-  const additionalShift = POINT_RADIUS + .2
-  const normal = new Vector2D(0, 0);
-  let collisionPoint: Point2D
-  if (xPenetration < yPenetration) { // exit by x
-    collisionPoint = new Vector2D(aabb.center.x, point.y);
-    if (pointToCenterX == 0) {
-      collisionPoint.x -= aabb.halfW + additionalShift // exit by left
-      normal.x = -1
-    } else {
-      const signX = Math.sign(pointToCenterX)
-      collisionPoint.x -= signX * (aabb.halfW + additionalShift)
-      normal.x = -signX
-    }
-
-  } else { // exit by y
-    collisionPoint = new Vector2D(point.x, aabb.center.y);
-    if (pointToCenterY == 0) {
-      collisionPoint.y -= aabb.halfH + additionalShift // exit by the top
-      normal.y = -1
-    } else {
-      const signY = Math.sign(pointToCenterY)
-      collisionPoint.y -= signY * (aabb.halfH + additionalShift)
-      normal.y = -signY
-    }
-  }
-
-  return { collisionPoint, normal };
-
-}
 
 // RUN EXAMPLES
+pointCollisionVertical()
+pointCollisionHorizontal()
 pointCollisionWave();
 generalExample();
-
-function pointCollisionWave() {
-  const W = 640;
-  const H = 160;
-
-  const ctx = createCtx2D("point-collision-wavy");
-  adjustCanvasForDisplay(ctx, W, H);
-
-  ctx.font = "12px courier";
-  ctx.textBaseline = "top";
-
-  document.querySelector("#root")?.appendChild(ctx.canvas);
-
-  const startPoint: Point2D = new Vector2D(50, 50);
-  const sinMotion = sinusoidalMotion(startPoint);
-
-  const aabb: AABB = new AABB(55, 45, 30, 12);
-
-  let collisionInfo: AABBPointCollision | undefined;
-
-  const drawingModule = drawingFunctions(ctx);
-
-  const drawAABB = drawingModule.drawAABB;
-  const drawPoint = drawingModule.drawPoint;
-
-  const loopModule = createLoop();
-
-  function update(dt: number) {
-    if (loopModule.currentFrame < 10)
-      console.log("update frame", loopModule.currentFrame);
-
-    if (false && collisionInfo && sinMotion.point.y < 45 + 7) {
-      return;
-    }
-
-    if (false && collisionInfo) {
-      return;
-    }
-
-    sinMotion.update(dt);
-
-    if (false) {
-      sinMotion.point.x = aabb.center.x
-      sinMotion.point.y = aabb.center.y - 1
-    }
-
-    collisionInfo = checkAABBPoint(aabb, sinMotion.point);
-  }
-
-  function draw() {
-    if (loopModule.currentFrame < 10)
-      console.log("draw frame", loopModule.currentFrame);
-
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, W, H);
-
-    if (collisionInfo) {
-      drawPoint(sinMotion.point, "yellow");
-      drawAABB(aabb, "red");
-      drawPoint(collisionInfo.collisionPoint, "green");
-    } else {
-      drawPoint(sinMotion.point, "white");
-      drawAABB(aabb, "white");
-    }
-
-    ctx.fillStyle = "white";
-    ctx.fillText(
-      `point: (${sinMotion.point.x.toFixed(2)}, ${sinMotion.point.y.toFixed(2)})`,
-      0.5,
-      0.5);
-    ctx.fillText(`WAVY`, 250, 0.5);
-  }
-
-  loopModule.setUpdate(update);
-  loopModule.setDraw(draw);
-
-  loopModule.start();
-}
 
 function generalExample() {
   const W = 640;
@@ -233,11 +41,11 @@ function generalExample() {
 
   const ray = new Ray(new Vector2D(10, 10), new Vector2D(50, 50));
 
-  const horizontalMotion = linearUpdate(
+  const horizontalMotion = linearMotion(
     new Vector2D(45, 50),
     new Vector2D(95, 50)
   );
-  const verticalMotion = linearUpdate(
+  const verticalMotion = linearMotion(
     new Vector2D(75, 35),
     new Vector2D(75, 65)
   );
@@ -302,144 +110,4 @@ function generalExample() {
   loopModule.setDraw(draw);
 
   loopModule.start();
-}
-
-function linearUpdate(
-  startPoint: Point2D,
-  endPoint: Point2D
-): {
-  point: Point2D;
-  update: (dt: number) => void;
-} {
-  let direction: 1 | -1 = 1;
-  let t = 0;
-
-  const step = 0.01;
-  const point = new Vector2D(startPoint.x, startPoint.y);
-
-  const update = (dt: number) => {
-    if (direction > 0) {
-      t += step;
-
-      if (t >= 1) {
-        direction = -1;
-        // skipping = true
-      }
-    } else {
-      t -= step;
-
-      if (t <= 0) {
-        direction = 1;
-        // skipping = true
-      }
-    }
-
-    point.x = startPoint.x + t * (endPoint.x - startPoint.x);
-    point.y = startPoint.y + t * (endPoint.y - startPoint.y);
-  };
-
-  return { point, update };
-}
-
-function sinusoidalMotion(startPoint: Point2D): {
-  point: Point2D;
-  update: (dt: number) => void;
-} {
-  const xStep = 10;
-  let xOffset = 0;
-  const MAX_OFFSET_X = 40;
-  let xDirection: 1 | -1 = 1;
-
-  const freq = 3;
-  const waveAmplitude = 10;
-
-  let skipping = false;
-  const timeToWaitBeforeChangingDirection = 0.1;
-  let timeWaited = 0;
-
-  const point = new Vector2D(startPoint.x, startPoint.y);
-
-  const update = (dt: number) => {
-    if (skipping) {
-      timeWaited += dt;
-      if (timeWaited >= timeToWaitBeforeChangingDirection) {
-        skipping = false;
-        timeWaited = 0;
-      }
-      return;
-    }
-
-    const step = dt * xStep;
-
-    if (xDirection > 0) {
-      xOffset += step;
-
-      if (xOffset >= MAX_OFFSET_X) {
-        xDirection = -1;
-        skipping = true;
-      }
-    } else {
-      xOffset -= step;
-
-      if (xOffset <= 0) {
-        xDirection = 1;
-        skipping = true;
-      }
-    }
-
-    point.x = startPoint.x + xOffset;
-    point.y = startPoint.y + sin((xOffset * freq) / TAU) * waveAmplitude;
-  };
-
-  return { point, update };
-}
-
-function drawingFunctions(ctx: CanvasRenderingContext2D) {
-  function drawPoint(point: Point2D, fillColor: string = "white") {
-    ctx.fillStyle = fillColor;
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, POINT_RADIUS, 0, TAU);
-    ctx.fill();
-  }
-
-  function drawAABB(aabb: AABB, strokeColor: string = "white") {
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 0.1;
-    ctx.strokeRect(aabb.x, aabb.y, aabb.w, aabb.h);
-  }
-
-  function drawRay(ray: Ray, strokeColor: string = "white") {
-    ctx.strokeStyle = strokeColor;
-    ctx.beginPath();
-    ctx.moveTo(ray.origin.x, ray.origin.y);
-
-    ctx.lineTo(ray.origin.x + ray.direction.x, ray.origin.y + ray.direction.y);
-
-    ctx.stroke();
-
-    drawPoint(ray.origin, "fuchsia");
-  }
-
-  return {
-    drawPoint,
-    drawAABB,
-    drawRay,
-  };
-}
-
-function createCtx2D(cssClassName?: string): CanvasRenderingContext2D {
-  if (!cssClassName) {
-    return document
-      .createElement("canvas")
-      .getContext("2d") as CanvasRenderingContext2D;
-  }
-
-  let canvas = document.querySelector(`.${cssClassName}`) as HTMLCanvasElement;
-
-  if (!canvas) {
-    canvas = document.createElement("canvas");
-    canvas.classList.add(cssClassName);
-  }
-
-  return canvas.getContext("2d") as CanvasRenderingContext2D;
 }
