@@ -88,7 +88,7 @@ function generalExample() {
     drawRay(ray);
 
     if (collisionInfo) {
-      drawPoint(collisionInfo.collisionPoint, "green");
+      drawPoint(collisionInfo.resolvedPoint, "green");
       drawPoint(sinMotion.point, "yellow");
       drawAABB(aabb, "red");
     } else {

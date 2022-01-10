@@ -62,6 +62,18 @@ export class AABB {
 }
 
 export type AABBPointCollision = {
-  collisionPoint: Point2D;
+  /**
+   * where to place the point to remove collision
+   */
+  resolvedPoint: Point2D;
+  /**
+   * the normal vector to the AABB edge that collided
+   */
   normal: Point2D;
 };
+
+
+export type AABBRayCollision = {
+  resolvedPoint: Point2D,
+  normal: Point2D,
+}

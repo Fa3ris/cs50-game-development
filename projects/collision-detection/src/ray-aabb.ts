@@ -1,8 +1,8 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
-import { Point2D, Vector2D, AABB, AABBPointCollision, Ray } from "~common/geometry";
+import { Point2D, Vector2D, AABB, AABBPointCollision, Ray, AABBRayCollision } from "~common/geometry";
 import { createLoop } from "~common/loop";
 import { createCtx2D } from "./canvas";
-import { checkAABBPoint } from "./collision";
+import { checkAABBPoint, checkAABBRay } from "./collision";
 import { drawingFunctions } from "./drawing";
 import { linearMotion, sinusoidalMotion } from "./motions";
 
@@ -30,7 +30,7 @@ export function rayAABB() {
   
     const aabb: AABB = new AABB(55, 45, 30, 12);
   
-    let collisionInfo: AABBPointCollision | undefined;
+    let collisionInfo: AABBRayCollision | undefined;
   
     const drawingModule = drawingFunctions(ctx);
   
@@ -48,7 +48,7 @@ export function rayAABB() {
       
       ray.origin = diagonalMotion.point
   
-      // collisionInfo = checkAABBPoint(aabb, sinMotion.point);
+      collisionInfo = checkAABBRay(aabb, ray);
     }
   
     function draw() {
@@ -58,15 +58,12 @@ export function rayAABB() {
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, W, H);
 
-      drawRay(ray);
-
-  
       if (collisionInfo) {
-        // drawPoint(sinMotion.point, "yellow");
+        drawRay(ray, "blue");
         drawAABB(aabb, "red");
-        drawPoint(collisionInfo.collisionPoint, "green");
+        // drawPoint(collisionInfo.collisionPoint, "green");
       } else {
-        // drawPoint(sinMotion.point, "white");
+        drawRay(ray, "white");
         drawAABB(aabb, "white");
       }
   
