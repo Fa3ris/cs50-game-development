@@ -105,8 +105,13 @@ export function checkAABBRay(aabb: AABB, ray: Ray) : AABBRayCollision | undefine
     return undefined
   }
 
+  const normal = new Vector2D(0, 0)
+
   if (tyMin > tMin) { // keep max tMin
     tMin = tyMin
+    normal.y = -Math.sign(divY) // collision happens on top/bottom edge
+  } else {
+    normal.x = -Math.sign(divX) // collision happens on right/left edge
   }
 
   if (tyMax < tMax) { // keep min tMax
@@ -117,8 +122,12 @@ export function checkAABBRay(aabb: AABB, ray: Ray) : AABBRayCollision | undefine
     return undefined
   }
 
-  let resolvedPoint = new Vector2D(0, 0)
-  let normal = new Vector2D(0, 0)
+  const resolvedPoint = new Vector2D(
+    ray.origin.x + ray.direction.x * tMin + normal.x,
+    ray.origin.y + ray.direction.y * tMin + normal.y)
+  
+  // hit.delta.x = (1.0 - hit.time) * -delta.x;
+  // hit.delta.y = (1.0 - hit.time) * -delta.y;
 
   return {
     resolvedPoint,
