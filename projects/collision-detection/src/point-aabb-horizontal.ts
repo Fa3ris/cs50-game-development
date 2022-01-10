@@ -52,7 +52,7 @@ export function pointCollisionHorizontal() {
       ctx.fillRect(0, 0, W, H);
   
       if (collisionInfo) {
-        drawPoint(collisionInfo.collisionPoint, "green");
+        drawPoint(collisionInfo.resolvedPoint, "green");
         drawPoint(horizontalMotion.point, "yellow");
         drawAABB(aabb, "red");
       } else {

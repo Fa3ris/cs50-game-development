@@ -61,7 +61,9 @@ export function rayAABB() {
       if (collisionInfo) {
         drawRay(ray, "blue");
         drawAABB(aabb, "red");
-        // drawPoint(collisionInfo.collisionPoint, "green");
+        drawPoint(collisionInfo.resolvedPoint, "green");
+        const normalRay = new Ray(collisionInfo.resolvedPoint, new Vector2D(collisionInfo.normal.x * 10, collisionInfo.normal.y * 10) )
+        drawRay(normalRay, "white")
       } else {
         drawRay(ray, "white");
         drawAABB(aabb, "white");

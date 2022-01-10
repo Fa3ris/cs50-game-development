@@ -56,7 +56,7 @@ export function pointCollisionVertical() {
   
   
       if (collisionInfo) {
-        drawPoint(collisionInfo.collisionPoint, "green");
+        drawPoint(collisionInfo.resolvedPoint, "green");
         drawPoint(verticalMotion.point, "yellow");
         drawAABB(aabb, "red");
       } else {

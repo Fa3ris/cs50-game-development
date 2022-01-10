@@ -64,7 +64,7 @@ export function pointCollisionWave() {
       if (collisionInfo) {
         drawPoint(sinMotion.point, "yellow");
         drawAABB(aabb, "red");
-        drawPoint(collisionInfo.collisionPoint, "green");
+        drawPoint(collisionInfo.resolvedPoint, "green");
       } else {
         drawPoint(sinMotion.point, "white");
         drawAABB(aabb, "white");
