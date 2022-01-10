@@ -8,6 +8,7 @@ import { linearMotion, sinusoidalMotion } from "./motions";
 import { pointCollisionHorizontal } from "./point-aabb-horizontal";
 import { pointCollisionVertical } from "./point-aabb-vertical";
 import { pointCollisionWave } from "./point-aabb-wave";
+import { rayAABB } from "./ray-aabb";
 
 // TODO
 // calculate normal vectors of segment - 2 possible directions
@@ -16,6 +17,7 @@ import { pointCollisionWave } from "./point-aabb-wave";
 
 
 // RUN EXAMPLES
+rayAABB()
 pointCollisionVertical()
 pointCollisionHorizontal()
 pointCollisionWave();
