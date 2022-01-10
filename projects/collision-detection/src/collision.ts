@@ -1,4 +1,4 @@
-import { AABB, Point2D, AABBPointCollision, Vector2D } from "~common/geometry";
+import { AABB, Point2D, AABBPointCollision, Vector2D, Ray, AABBRayCollision } from "~common/geometry";
 import { POINT_RADIUS } from "./drawing";
 
 export function checkAABBPoint(
@@ -21,31 +21,108 @@ export function checkAABBPoint(
   
     const additionalShift = POINT_RADIUS + .2
     const normal = new Vector2D(0, 0);
-    let collisionPoint: Point2D
+    let resolvedPoint: Point2D
     if (xPenetration < yPenetration) { // exit by x
-      collisionPoint = new Vector2D(aabb.center.x, point.y);
+      resolvedPoint = new Vector2D(aabb.center.x, point.y);
       if (pointToCenterX == 0) {
-        collisionPoint.x -= aabb.halfW + additionalShift // exit by left
+        resolvedPoint.x -= aabb.halfW + additionalShift // exit by left
         normal.x = -1
       } else {
         const signX = Math.sign(pointToCenterX)
-        collisionPoint.x -= signX * (aabb.halfW + additionalShift)
+        resolvedPoint.x -= signX * (aabb.halfW + additionalShift)
         normal.x = -signX
       }
   
     } else { // exit by y
-      collisionPoint = new Vector2D(point.x, aabb.center.y);
+      resolvedPoint = new Vector2D(point.x, aabb.center.y);
       if (pointToCenterY == 0) {
-        collisionPoint.y -= aabb.halfH + additionalShift // exit by the top
+        resolvedPoint.y -= aabb.halfH + additionalShift // exit by the top
         normal.y = -1
       } else {
         const signY = Math.sign(pointToCenterY)
-        collisionPoint.y -= signY * (aabb.halfH + additionalShift)
+        resolvedPoint.y -= signY * (aabb.halfH + additionalShift)
         normal.y = -signY
       }
     }
   
-    return { collisionPoint, normal };
+    return { resolvedPoint, normal };
   
   }
+
+
+
+export function checkAABBRay(aabb: AABB, ray: Ray) : AABBRayCollision | undefined {
+
+
+  /* 
+    a segment AB is described by the equation
+    S(t) = A + t*(B - A)
+
+
+    find the values of t for which segment intersect the 4 edges of the AABB
+    => tXMin, tXMax, tYMin, tYMax
+
+    for left and right edge, we have x = cste
+      solve cste = Ax + t * (Bx - Ax) => t = (cst - Ax) / (Bx - Ax)
+
+    for top and bottom edge, we have y = cste
+      solve cste = Ay + t * (By - Ay) => t = (cst - Ay) / (By - Ay)
+
+    for a direction i and the opposite direction j,
+    we must have tiMin <= tjMax to have a collision with the aabb
+
+    the collision happens on tMin = max(tXMin, tYMin)
+    we also have tMax = min(tXMax, tYMax)
+
+    to be on the segment AB, we must have tMin <= 1 && tMax >= 0
+  
+  */
+
+  // compute division once and use multiplication next for speed
+  // can retain the sign even if direction equal to -0 (negative zero) => -Infinity
+  const divX = 1 / ray.direction.x
+  const divY = 1 / ray.direction.y
+  
+  let tMin, tMax: number;
+  if (divX >= 0) {
+    tMin = (aabb.left - ray.origin.x) * divX
+    tMax = (aabb.right - ray.origin.x) * divX
+  } else {
+    tMin = (aabb.right - ray.origin.x) * divX
+    tMax = (aabb.left - ray.origin.x) * divX
+  }
+
+  let tyMin, tyMax: number
+  if (divY >= 0) {
+    tyMin = (aabb.top - ray.origin.y) * divY
+    tyMax = (aabb.bottom - ray.origin.y) * divY
+  } else {
+    tyMin = (aabb.bottom - ray.origin.y) * divY
+    tyMax = (aabb.top - ray.origin.y) * divY
+  }
+
+  if (tMin > tyMax || tyMin > tMax) {
+    return undefined
+  }
+
+  if (tyMin > tMin) { // keep max tMin
+    tMin = tyMin
+  }
+
+  if (tyMax < tMax) { // keep min tMax
+    tMax = tyMax
+  }
+
+  if (tMin > 1 || tMax < 0) {
+    return undefined
+  }
+
+  let resolvedPoint = new Vector2D(0, 0)
+  let normal = new Vector2D(0, 0)
+
+  return {
+    resolvedPoint,
+    normal,
+  }
+}
   
