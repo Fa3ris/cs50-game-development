@@ -1,4 +1,4 @@
-import { AABB, Point2D, AABBPointCollision, Vector2D, Ray, AABBRayCollision } from "~common/geometry";
+import { AABB, Point2D, AABBPointCollision, Vector2D, Ray, AABBRayCollision, AABB_AABBCollision } from "~common/geometry";
 import { POINT_RADIUS } from "./drawing";
 
 export function checkAABBPoint(
@@ -78,8 +78,8 @@ export function checkAABBRay(aabb: AABB, ray: Ray) : AABBRayCollision | undefine
   
   */
 
-  // compute division once and use multiplication next for speed
-  // can retain the sign even if direction equal to -0 (negative zero) => -Infinity
+  // compute division once and use multiplication next because it is faster
+  // can retain the sign even if direction equals -0 (negative zero) => -Infinity
   const divX = 1 / ray.direction.x
   const divY = 1 / ray.direction.y
   
@@ -126,6 +126,7 @@ export function checkAABBRay(aabb: AABB, ray: Ray) : AABBRayCollision | undefine
     ray.origin.x + ray.direction.x * tMin + normal.x,
     ray.origin.y + ray.direction.y * tMin + normal.y)
   
+  // TODO
   // hit.delta.x = (1.0 - hit.time) * -delta.x;
   // hit.delta.y = (1.0 - hit.time) * -delta.y;
 
@@ -133,5 +134,10 @@ export function checkAABBRay(aabb: AABB, ray: Ray) : AABBRayCollision | undefine
     resolvedPoint,
     normal,
   }
+}
+
+
+export function checkAABB_AABB(aabb1: AABB, aabb2: AABB): AABB_AABBCollision | undefined {
+  return undefined
 }
   
