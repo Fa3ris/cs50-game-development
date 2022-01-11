@@ -1,6 +1,7 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { AABB, Point2D, AABBPointCollision, Vector2D, Ray } from "~common/geometry";
 import { createLoop } from "~common/loop";
+import { AABB_AABB } from "./aabb-aabb";
 import { createCtx2D } from "./canvas";
 import { checkAABBPoint } from "./collision";
 import { drawingFunctions, POINT_RADIUS } from "./drawing";
@@ -17,6 +18,7 @@ import { rayAABB } from "./ray-aabb";
 
 
 // RUN EXAMPLES
+AABB_AABB()
 rayAABB()
 pointCollisionVertical()
 pointCollisionHorizontal()
