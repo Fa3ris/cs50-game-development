@@ -1,10 +1,10 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
-import { Point2D, Vector2D, AABB, AABBPointCollision, AABB_AABBCollision } from "~common/geometry";
+import { AABB, AABB_AABBCollision, Vector2D } from "~common/geometry";
 import { createLoop } from "~common/loop";
 import { createCtx2D } from "./canvas";
-import { checkAABBPoint, checkAABB_AABB } from "./collision";
+import { checkAABB_AABB } from "./collision";
 import { drawingFunctions } from "./drawing";
-import { linearMotion, sinusoidalMotion } from "./motions";
+import { linearMotion } from "./motions";
 
 export function AABB_AABB() {
     const W = 640;

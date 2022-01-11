@@ -138,6 +138,13 @@ export function checkAABBRay(aabb: AABB, ray: Ray) : AABBRayCollision | undefine
 
 
 export function checkAABB_AABB(aabb1: AABB, aabb2: AABB): AABB_AABBCollision | undefined {
+
+  const collisionDetected = aabb1.left < aabb2.right && aabb1.right > aabb2.left
+  && aabb1.top < aabb2.bottom && aabb1.bottom > aabb2.top
+
+  if (collisionDetected) {
+    return {}
+  }
   return undefined
 }
   
