@@ -51,13 +51,33 @@ export class AABB {
     this.left = x;
     this.right = x + w;
 
-    this.min = new Vector2D(x, y);
-    this.max = new Vector2D(x + w, y + h);
-
-    this.center = new Vector2D(x + w / 2, y + h / 2);
+    this.min = new Vector2D(this.left, this.top);
+    this.max = new Vector2D(this.right, this.bottom);
 
     this.halfW = w / 2;
     this.halfH = h / 2;
+    this.center = new Vector2D(x + this.halfW, y + this.halfH);
+
+  }
+
+  setX(x: number) {
+    this.x = x;
+    this.left = x;
+    this.right = x + this.w;
+
+    this.min.x = this.left
+    this.max.x = this.right
+    this.center.x = x + this.halfW
+  }
+
+  setY(y: number) {
+    this.y = y;
+    this.top = y;
+    this.bottom = y + this.h;
+
+    this.min.y = this.top
+    this.max.y = this.bottom
+    this.center.y = y + this.halfH
   }
 }
 
@@ -77,3 +97,6 @@ export type AABBRayCollision = {
   resolvedPoint: Point2D,
   normal: Point2D,
 }
+
+
+export type AABB_AABBCollision = {}
