@@ -137,14 +137,33 @@ export function checkAABBRay(aabb: AABB, ray: Ray) : AABBRayCollision | undefine
 }
 
 
-export function checkAABB_AABB(aabb1: AABB, aabb2: AABB): AABB_AABBCollision | undefined {
+export function checkAABB_AABB(collider: AABB, aabb: AABB): AABB_AABBCollision | undefined {
 
-  const collisionDetected = aabb1.left < aabb2.right && aabb1.right > aabb2.left
-  && aabb1.top < aabb2.bottom && aabb1.bottom > aabb2.top
+  const dCenterX = collider.center.x - aabb.center.x;
+  const penetrationX = aabb.halfW + collider.halfW - Math.abs(dCenterX)
 
-  if (collisionDetected) {
-    return {}
+  if (penetrationX <= 0) {
+    return undefined
   }
-  return undefined
+
+  const dCenterY = collider.center.y - aabb.center.y;
+  const penetrationY = aabb.halfH + collider.halfH - Math.abs(dCenterY)
+
+  if (penetrationY <= 0) {
+    return undefined
+  }
+
+  const normal = new Vector2D(0, 0)
+  const resolvedColliderPosition = new Vector2D(collider.x, collider.y)
+  if (penetrationX < penetrationY) {
+    const signX = Math.sign(dCenterX)
+    normal.x = signX
+    resolvedColliderPosition.x = collider.center.x + (penetrationX * signX) - collider.halfW
+  } else {
+    const signY = Math.sign(dCenterY)
+    normal.y = signY
+    resolvedColliderPosition.y = collider.center.y + (penetrationY * signY) - collider.halfH
+  }
+  return {normal, resolvedColliderPosition}
 }
   

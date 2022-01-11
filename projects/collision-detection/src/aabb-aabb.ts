@@ -1,5 +1,5 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
-import { AABB, AABB_AABBCollision, Vector2D } from "~common/geometry";
+import { AABB, AABB_AABBCollision, Ray, Vector2D } from "~common/geometry";
 import { createLoop } from "~common/loop";
 import { createCtx2D } from "./canvas";
 import { checkAABB_AABB } from "./collision";
@@ -19,7 +19,7 @@ export function AABB_AABB() {
     document.querySelector("#root")?.appendChild(ctx.canvas);
   
     const horizontalMotion = linearMotion(
-      new Vector2D(45, 50),
+      new Vector2D(20, 50),
       new Vector2D(95, 50)
     );
   
@@ -32,19 +32,28 @@ export function AABB_AABB() {
   
     const drawAABB = drawingModule.drawAABB;
     const drawPoint = drawingModule.drawPoint;
+    const drawRay = drawingModule.drawRay;
   
     const loopModule = createLoop();
   
     function update(dt: number) {
       if (loopModule.currentFrame < 10)
         console.log("update frame", loopModule.currentFrame);
-  
+
       horizontalMotion.update(dt)
 
       movingAABB.setX(horizontalMotion.point.x)
       movingAABB.setY(horizontalMotion.point.y)
   
-      collisionInfo = checkAABB_AABB(staticAABB, movingAABB);
+      collisionInfo = checkAABB_AABB(movingAABB, staticAABB);
+
+      if (collisionInfo) {
+        // console.log("moving aabb", movingAABB)
+        // console.log("static aabb", staticAABB)
+        if (loopModule.currentFrame < 10) {
+          console.log(collisionInfo)
+        }
+      }
     }
   
     function draw() {
@@ -57,6 +66,16 @@ export function AABB_AABB() {
       if (collisionInfo) {
         drawAABB(staticAABB, "red");
         drawAABB(movingAABB, "yellow");
+        const resolvedAABB = new AABB(
+          collisionInfo.resolvedColliderPosition.x, collisionInfo.resolvedColliderPosition.y,
+           movingAABB.w, movingAABB.h)
+
+        const startRay = new Vector2D(staticAABB.center.x + staticAABB.halfW * collisionInfo.normal.x,
+        staticAABB.center.y + staticAABB.halfH * collisionInfo.normal.y)
+        
+        const normalRay = new Ray(startRay, new Vector2D(collisionInfo.normal.x * 10, collisionInfo.normal.y * 10) )
+        drawRay(normalRay, "white")
+        drawAABB(resolvedAABB, "orange")
       } else {
         drawAABB(staticAABB, "white");
         drawAABB(movingAABB, "green");
