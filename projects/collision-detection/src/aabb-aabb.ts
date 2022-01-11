@@ -19,8 +19,8 @@ export function AABB_AABB() {
     document.querySelector("#root")?.appendChild(ctx.canvas);
   
     const horizontalMotion = linearMotion(
-      new Vector2D(20, 50),
-      new Vector2D(95, 50)
+      new Vector2D(20, 40),
+      new Vector2D(95, 40)
     );
   
     const staticAABB: AABB = new AABB(55, 45, 30, 12);
@@ -48,8 +48,6 @@ export function AABB_AABB() {
       collisionInfo = checkAABB_AABB(movingAABB, staticAABB);
 
       if (collisionInfo) {
-        // console.log("moving aabb", movingAABB)
-        // console.log("static aabb", staticAABB)
         if (loopModule.currentFrame < 10) {
           console.log(collisionInfo)
         }
