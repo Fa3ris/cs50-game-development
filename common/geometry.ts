@@ -96,6 +96,7 @@ export type AABBPointCollision = {
 export type AABBRayCollision = {
   resolvedPoint: Point2D,
   normal: Point2D,
+  tMin: number
 }
 
 
@@ -103,4 +104,9 @@ export type AABB_AABBCollision = {
 normal: Point2D,
 resolvedColliderPosition: Point2D
 
+}
+
+export type SweptAABB_AABBCollision = {
+  resolvedColliderPosition: Point2D,
+  normal: Point2D
 }

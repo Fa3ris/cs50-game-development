@@ -10,6 +10,7 @@ import { pointCollisionHorizontal } from "./point-aabb-horizontal";
 import { pointCollisionVertical } from "./point-aabb-vertical";
 import { pointCollisionWave } from "./point-aabb-wave";
 import { rayAABB } from "./ray-aabb";
+import { sweptAABB_AABB } from "./swept-aabb-aabb";
 
 // TODO
 // calculate normal vectors of segment - 2 possible directions
@@ -18,6 +19,7 @@ import { rayAABB } from "./ray-aabb";
 
 
 // RUN EXAMPLES
+sweptAABB_AABB()
 AABB_AABB()
 rayAABB()
 pointCollisionVertical()

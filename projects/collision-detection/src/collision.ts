@@ -1,4 +1,4 @@
-import { AABB, Point2D, AABBPointCollision, Vector2D, Ray, AABBRayCollision, AABB_AABBCollision } from "~common/geometry";
+import { AABB, Point2D, AABBPointCollision, Vector2D, Ray, AABBRayCollision, AABB_AABBCollision, SweptAABB_AABBCollision } from "~common/geometry";
 import { POINT_RADIUS } from "./drawing";
 
 export function checkAABBPoint(
@@ -133,6 +133,7 @@ export function checkAABBRay(aabb: AABB, ray: Ray) : AABBRayCollision | undefine
   return {
     resolvedPoint,
     normal,
+    tMin
   }
 }
 
@@ -165,5 +166,36 @@ export function checkAABB_AABB(collider: AABB, aabb: AABB): AABB_AABBCollision |
     resolvedColliderPosition.y = collider.center.y + (penetrationY * signY) - collider.halfH
   }
   return {normal, resolvedColliderPosition}
+}
+
+/** 
+  compute the Minkowski difference (aabb - collider)
+  
+  and on the other hand (collider - collider) = zero-vector
+
+  check if collision between aabb and ray starting from zero-vector and going to direction 
+
+  @param direction must not be the zero vector
+
+*/
+export function checkSweptAABB_AABB(collider: AABB, direction: Vector2D, aabb: AABB): SweptAABB_AABBCollision | undefined {
+
+  const mdLeft = aabb.left - collider.right
+  const mdTop = aabb.top - collider.bottom
+  const mdWidth = aabb.w + collider.w
+  const mdHeight = aabb.h + collider.h
+  const minkowskiDifference: AABB = new AABB(mdLeft, mdTop, mdWidth, mdHeight)
+
+  const ray = new Ray(new Vector2D(0, 0), direction)
+  
+  const rayAABBCollision = checkAABBRay(minkowskiDifference, ray)
+
+  if (rayAABBCollision) {
+    const resolvedColliderPosition = new Vector2D(
+      collider.x + rayAABBCollision.tMin * direction.x, 
+      collider.y + rayAABBCollision.tMin * direction.y)
+    return {resolvedColliderPosition, normal: rayAABBCollision.normal}
+  }
+  return undefined
 }
   
