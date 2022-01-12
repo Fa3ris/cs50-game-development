@@ -108,5 +108,6 @@ resolvedColliderPosition: Point2D
 
 export type SweptAABB_AABBCollision = {
   resolvedColliderPosition: Point2D,
-  normal: Point2D
+  normal: Point2D,
+  tMin: number
 }

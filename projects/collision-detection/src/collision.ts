@@ -194,7 +194,7 @@ export function checkSweptAABB_AABB(collider: AABB, direction: Vector2D, aabb: A
     const resolvedColliderPosition = new Vector2D(
       collider.x + rayAABBCollision.tMin * direction.x, 
       collider.y + rayAABBCollision.tMin * direction.y)
-    return {resolvedColliderPosition, normal: rayAABBCollision.normal}
+    return {resolvedColliderPosition, normal: rayAABBCollision.normal, tMin: rayAABBCollision.tMin}
   }
   return undefined
 }
