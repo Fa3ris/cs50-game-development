@@ -1,4 +1,6 @@
+import { AABB, AABB_AABBCollision, SweptAABB_AABBCollision, Vector2D } from "~common/geometry";
 import { currentFrame } from "~common/loop";
+import { checkAABB_AABB, checkSweptAABB_AABB } from "~projects/collision-detection/src/collision";
 import { ctx, H, keys, W, loopStep } from "../main";
 import { segmentsIntersect } from "../segment-intersection";
 import { drawPaddle, elementsTileW, elementsTileH, PaddleColor, PaddleSize, ballDim, drawBall, drawBrick } from "../tile-renderer";
@@ -12,9 +14,8 @@ type Paddle = {
     h: number,
     x: number,
     y: number
-    dx: number
-
-
+    dx: number,
+    aabb: AABB
 }
 
 
@@ -26,7 +27,8 @@ type BrickInfo = {
     x: number,
     y: number,
     life: number,
-    index: number
+    index: number,
+    aabb: AABB,
 }
 
 const bricks: BrickInfo[][] = []
@@ -38,8 +40,10 @@ type Ball = {
     y: number,
     index: number,
     dx: number,
-    dy: number
+    dy: number,
+    aabb: AABB
 }
+
 let ball: Ball
 
 const paddleSpeed = 10;
@@ -127,24 +131,31 @@ let collidedBrickY: number
 export const play: State = {
     enter: function (): void {
         console.log('enter play')
+        const paddleW =  PaddleSize.MEDIUM * elementsTileW
+        const paddleX =  (W - paddleW) / 2
+        const paddleY =  H - 5 - elementsTileH
         paddle = {
           size: PaddleSize.MEDIUM,
           color: PaddleColor.BLUE,
-          w: PaddleSize.MEDIUM * elementsTileW,
+          w: paddleW,
           h: elementsTileH,
-          x: (W - PaddleSize.MEDIUM * elementsTileW) / 2,
-          y: H - 5 - elementsTileH,
+          x: paddleX,
+          y: paddleY,
           dx: 0,
+          aabb: new AABB(paddleX, paddleY, paddleW, elementsTileH)
         };
 
+        const ballX = (W - ballDim) / 2
+        const ballY = paddle.y - ballDim
         ball = {
-            x: (W - ballDim) / 2,
+            x: ballX,
             y: paddle.y - ballDim,
             w: ballDim,
             h: ballDim,
             index: 0,
             dx: 0,
-            dy: 0
+            dy: 0,
+            aabb: new AABB(ballX, ballY, ballDim, ballDim)
         }
 
         const rowGap = 6
@@ -1302,8 +1313,9 @@ function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] 
         res.push({
             x,
             y,
-            index: 0,
-            life: 1
+            index: index,
+            life: 1,
+            aabb: new AABB(x, y, elementsTileW, elementsTileH)
         })
 
         x += elementsTileW
