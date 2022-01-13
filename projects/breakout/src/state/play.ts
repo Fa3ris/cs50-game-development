@@ -1313,7 +1313,7 @@ function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] 
         res.push({
             x,
             y,
-            index: index,
+            index: 0,
             life: 1,
             aabb: new AABB(x, y, elementsTileW, elementsTileH)
         })
