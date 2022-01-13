@@ -128,6 +128,15 @@ let collidedBrickY: number
 
 /* END collision drawings */
 
+
+const borderPadding = 10
+let topBorderAABB:AABB
+let bottomBorderAABB :AABB
+let leftBorderAABB :AABB
+let rightBorderAABB:AABB
+
+
+
 export const play: State = {
     enter: function (): void {
         console.log('enter play')
@@ -162,6 +171,10 @@ export const play: State = {
         bricks.push(generateBrickRow(3, 100, 8))
         bricks.push(generateBrickRow(5, 100 + elementsTileH + rowGap, 8))
 
+        topBorderAABB = new AABB(0, -borderPadding, W, borderPadding)
+        bottomBorderAABB = new AABB(0, H, W, borderPadding)
+        leftBorderAABB = new AABB(-borderPadding, 0, borderPadding, H)
+        rightBorderAABB = new AABB(W, 0, borderPadding, H)
 
         if (debugPlay) {
             // values to trigger aabb collision
@@ -1325,13 +1338,340 @@ function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] 
         }
         
     }
-
-
     return res
-
 }
 
 
 function distanceSquared(x1: number, y1: number, x2: number, y2: number): number {
     return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)
+}
+
+
+// FIXME: does not work :(
+function updateV2(dt: number) {
+
+    if (serveState) {
+
+        paddle.x += paddle.dx
+        if (paddle.dx != 0) {
+            // console.log("move paddle", paddle.dx)
+        }
+        paddleMoveX = paddle.dx
+        paddle.dx = 0
+    
+        if (paddle.x < 0) {
+            paddle.x = 0
+        }
+    
+        if (paddle.x + paddle.w > W) {
+            paddle.x = W - paddle.w
+        }
+
+        ball.x = paddle.x + (paddle.w - ball.w) / 2,
+        ball.y = paddle.y - ball.h
+        return
+    }
+
+
+    ball.aabb.setX(ball.x)
+    ball.aabb.setY(ball.y)
+
+    // console.log('ball init state', JSON.stringify(ball))
+
+    let ballDx = ball.dx * dt
+    let ballDy = ball.dy * dt
+
+    const ballMove = new Vector2D(ballDx, ballDy)
+
+    const topCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  topBorderAABB)
+
+    if (topCollision) {
+        
+        ballDx *= topCollision.tMin
+        ballDy *= topCollision.tMin
+
+        ball.x += ballDx
+        // ball.y += ballDy
+
+        ball.y = 1e-8
+
+        // if (topCollision.normal.x != 0) {
+            
+        //     ball.dx = Math.sign(topCollision.normal.x) * Math.abs(ball.dx)
+        // }
+
+        ball.dy = Math.abs(ball.dy)
+        // if (topCollision.normal.y != 0) {
+        // }
+
+        console.log('resolved top collision', 'ball', ball, 'collision', topCollision)
+        return
+    }
+    const bottomCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  bottomBorderAABB)
+
+    if (bottomCollision) {
+        ballDx *= bottomCollision.tMin
+        ballDy *= bottomCollision.tMin
+
+        ball.x += ballDx
+        ball.y += ballDy
+
+        ball.y = H - ball.h - 1e-8
+
+        ball.dy = -Math.abs(ball.dy)
+        // if (bottomCollision.normal.x != 0) {
+        //     ball.dx = Math.sign(bottomCollision.normal.x) * Math.abs(ball.dx)
+        // }
+
+        // if (bottomCollision.normal.y != 0) {
+            
+        // }
+
+        console.log('resolved bottom collision', 'ball', ball, 'collision', bottomCollision)
+        return
+
+    }
+    const leftCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  leftBorderAABB)
+
+    if (leftCollision) {
+        ballDx *= leftCollision.tMin
+        ballDy *= leftCollision.tMin
+
+        ball.x += ballDx
+        ball.y += ballDy
+
+        ball.x = 1e-8
+
+        ball.dx = Math.abs(ball.dx)
+        // if (leftCollision.normal.x != 0) {
+        //     ball.dx = Math.sign(leftCollision.normal.x) * Math.abs(ball.dx)
+        // }
+
+        // if (leftCollision.normal.y != 0) {
+        //     ball.dy = Math.sign(leftCollision.normal.y) * Math.abs(ball.dy)
+        // }
+
+        console.log('resolved left collision', 'ball', ball, 'collision', leftCollision)
+        return
+    }
+    const rightCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  rightBorderAABB)
+    if (rightCollision) {
+        ballDx *= rightCollision.tMin
+        ballDy *= rightCollision.tMin
+
+        ball.x += ballDx
+        ball.y += ballDy
+
+        ball.x = W - ball.w - 1e-8
+
+        ball.dx = -Math.abs(ball.dx)
+
+        // if (rightCollision.normal.x != 0) {
+        //     ball.dx = Math.sign(rightCollision.normal.x) * Math.abs(ball.dx)
+        // }
+
+        // if (rightCollision.normal.y != 0) {
+        //     ball.dy = Math.sign(rightCollision.normal.y) * Math.abs(ball.dy)
+        // }
+
+        console.log('resolved right collision', 'ball', ball, 'collision', rightCollision)
+        return
+    }
+
+
+    ball.x += ballDx
+    ball.y += ballDy
+
+    paddle.x += paddle.dx
+    if (paddle.dx != 0) {
+    }
+    paddleMoveX = paddle.dx
+    paddle.dx = 0
+
+    if (paddle.x < 0) {
+        paddle.x = 0
+    }
+
+    if (paddle.x + paddle.w > W) {
+        paddle.x = W - paddle.w
+    }
+
+    return
+
+     /*
+        check if colliding ball - each brick
+                            ball - paddle
+                            ball - borders
+        
+        gather all collisions - resolve them all
+
+        check if moving ball will collide - brick
+                                            - moving (or not) paddle
+
+        what can really be colliding is the ball
+            recursive check ball colliding with entities
+                check if ball colliding with one entity
+                    resolve collision and update ball direction
+                    call check ball colliding with entities
+
+
+        finally check ball borders - and reset
+
+        */
+
+    /* STATIC COLLISIONS */
+
+    // const aabbCollisions: AABB_AABBCollision[] = []
+
+
+    
+
+    // const staticBallPaddleCollision = checkAABB_AABB(ball.aabb, paddle.aabb)
+
+    // if (staticBallPaddleCollision) {
+    //     aabbCollisions.push(staticBallPaddleCollision)
+    // }
+
+    // for (const row of bricks) {
+    //     for (const brick of row) {
+    //         const ballBrickCollision = checkAABB_AABB(ball.aabb, brick.aabb)
+    //         if (ballBrickCollision) {
+    //             aabbCollisions.push(ballBrickCollision)
+    //         }
+    //     }
+    // }
+
+    // if (ball.x <= 0) {
+    //     ball.x = 0
+    //     ball.dx = Math.abs(ball.dx)
+    //     const leftBorderCollision: AABB_AABBCollision = {
+    //         normal: new Vector2D(10, 0),
+    //         resolvedColliderPosition: new Vector2D(0, ball.y)
+    //     }
+    //     aabbCollisions.push(leftBorderCollision)
+    // }
+
+    // if (ball.x >= W - ballDim) {
+    //     ball.x = W - ballDim
+    //     ball.dx = -Math.abs(ball.dx)
+    //     const rightBorderCollision: AABB_AABBCollision = {
+    //         normal: new Vector2D(-10, 0),
+    //         resolvedColliderPosition: new Vector2D(W - ballDim, ball.y)
+    //     }
+    //     aabbCollisions.push(rightBorderCollision)
+    // }
+
+    // if (ball.y <= 0) {
+    //     ball.y = 0
+    //     ball.dy = -Math.abs(ball.dy)
+    //     const topBorderCollision: AABB_AABBCollision = {
+    //         normal: new Vector2D(0, -10),
+    //         resolvedColliderPosition: new Vector2D(ball.x, 0)
+    //     }
+    //     aabbCollisions.push(topBorderCollision)
+    // }
+
+    // if (aabbCollisions.length > 0) {
+    //     console.log(`resolving ${aabbCollisions.length} static collisions`, aabbCollisions)
+
+    //     const resultantNormal = new Vector2D(0, 0)
+    //     const resultantPosition = new Vector2D(0, 0)
+
+    //     for (const staticCollision of aabbCollisions) {
+    //         resultantNormal.x += staticCollision.normal.x
+    //         resultantNormal.y += staticCollision.normal.y
+
+    //         resultantPosition.x += staticCollision.resolvedColliderPosition.x
+    //         resultantPosition.y += staticCollision.resolvedColliderPosition.y
+    //     }
+
+    //     resultantPosition.x /= aabbCollisions.length
+    //     resultantPosition.y /= aabbCollisions.length
+
+    //     ball.x = ball.aabb.x = resultantPosition.x
+    //     ball.y = ball.aabb.y = resultantPosition.y
+    //     if (Math.sign(resultantNormal.x) != 0) {
+
+    //         ball.dx = Math.sign(resultantNormal.x) * ball.dx
+    //     }
+    //     if (Math.sign(resultantNormal.y) != 0) {
+    //         ball.dy = Math.sign(resultantNormal.y) * ball.dy
+    //     }
+
+    //     console.log('ball after static resolution', ball)
+
+    // }
+
+
+    // /* DYNAMIC COLLISIONS */
+
+    // const sweptCollisions: SweptAABB_AABBCollision[] = []
+    
+    
+
+    // const ballMoveRelativeToPaddle = new Vector2D(ballDx - paddleMoveX, ballDy)
+
+    // const ballPaddleCollision = checkSweptAABB_AABB(ball.aabb, ballMoveRelativeToPaddle,  paddle.aabb)
+    
+    // if (ballPaddleCollision && ball.dy > 0) { 
+    //     console.log('collide with paddle', "ball", ball)
+    //     sweptCollisions.push(ballPaddleCollision) }
+
+    
+
+    // for (const row of bricks) {
+    //     for (const brick of row) {
+    //         const ballBrickCollision = checkSweptAABB_AABB(ball.aabb, ballMove, brick.aabb)
+    //         if (ballBrickCollision) {
+    //             console.log('collide with brick', brick.index)
+    //             sweptCollisions.push(ballBrickCollision)
+    //         }
+    //     }
+    // }
+
+
+    // if (sweptCollisions.length > 0) {
+    //     console.log(`resolving ${sweptCollisions.length} sweeping collisions`, sweptCollisions)
+
+    //     const lowestTMin = sweptCollisions.map(collision => collision.tMin)
+    //     .reduce((resultTMin, current) => { return Math.min(resultTMin, current)})
+        
+
+    //     ballDx *= lowestTMin
+    //     ballDy *= lowestTMin
+
+    //     const resultantNormal = new Vector2D(0, 0)
+
+    //     for (const staticCollision of sweptCollisions) {
+    //         resultantNormal.x += staticCollision.normal.x
+    //         resultantNormal.y += staticCollision.normal.y
+    //     }
+
+    //     ball.dx = Math.sign(resultantNormal.x) * ball.dx
+    //     ball.dy = Math.sign(resultantNormal.y) * ball.dx
+
+    // }
+
+    // ball.x += ballDx
+    // ball.y += ballDy
+
+    // ball.aabb.setX(ball.x)
+    // ball.aabb.setY(ball.y)
+    
+    
+    // paddle.x += paddle.dx
+    // if (paddle.dx != 0) {
+    //     console.log("move paddle", paddle.dx)
+    // }
+    // paddleMoveX = paddle.dx
+    // paddle.dx = 0
+
+    // if (paddle.x < 0) {
+    //     paddle.x = 0
+    // }
+
+    // if (paddle.x + paddle.w > W) {
+    //     paddle.x = W - paddle.w
+    // }
+
 }
