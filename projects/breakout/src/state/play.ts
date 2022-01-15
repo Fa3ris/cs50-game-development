@@ -1,6 +1,8 @@
 import { AABB, AABB_AABBCollision, SweptAABB_AABBCollision, Vector2D } from "~common/geometry";
 import { currentFrame } from "~common/loop";
 import { checkAABB_AABB, checkSweptAABB_AABB } from "~projects/collision-detection/src/collision";
+import { TAU } from "~projects/collision-detection/src/drawing";
+import { sweptAABB_AABB } from "~projects/collision-detection/src/swept-aabb-aabb";
 import { ctx, H, keys, W, loopStep } from "../main";
 import { segmentsIntersect } from "../segment-intersection";
 import { drawPaddle, elementsTileW, elementsTileH, PaddleColor, PaddleSize, ballDim, drawBall, drawBrick } from "../tile-renderer";
@@ -169,7 +171,8 @@ export const play: State = {
 
         const rowGap = 6
         bricks.push(generateBrickRow(3, 100, 8))
-        bricks.push(generateBrickRow(5, 100 + elementsTileH + rowGap, 8))
+        bricks.push(generateBrickRow(5, 100 + elementsTileH + rowGap, 4))
+        bricks.push(generateBrickRow(5, 100 + 2.25*elementsTileH + rowGap, 15))
 
         topBorderAABB = new AABB(0, -borderPadding, W, borderPadding)
         bottomBorderAABB = new AABB(0, H, W, borderPadding)
@@ -188,10 +191,10 @@ export const play: State = {
     
             ball.y -= 10
     
-            ball.dx = 100
-            ball.dy = 60
+            ball.dx = dx0
+            ball.dy = dy0
 
-            serveState = false
+            // serveState = false
 
              /* values to trigger aabb collision
 
@@ -237,6 +240,8 @@ export const play: State = {
             }
         }
 
+        updateV2(dt)
+        return
 
         updatePaddle(paddle, dt)
         updateBall(dt)
@@ -261,6 +266,65 @@ export const play: State = {
         drawBall(ctx, ball.index, ball.x, ball.y)
 
         if (debugPlay) {
+
+            ctx.save()
+            ctx.textBaseline = "top"
+            ctx.fillStyle = "white"
+            ctx.font = "20px breakout-font"
+            ctx.fillText(`${brickCollisions.length}`, 10, 10)
+            ctx.restore()
+
+            for (const brickCollision of brickCollisions) {
+                ctx.strokeStyle = "red"
+                ctx.strokeRect(brickCollision.brick.x, brickCollision.brick.y, elementsTileW, elementsTileH)
+
+                brickCollision.collision.normal.x
+                brickCollision.collision.normal.y
+
+                ctx.save()
+                ctx.translate(brickCollision.collision.resolvedColliderPosition.x, brickCollision.collision.resolvedColliderPosition.y);
+                ctx.beginPath()
+                ctx.moveTo(0, 0)
+                const dirX = brickCollision.collision.normal.x * 10
+                const dirY = brickCollision.collision.normal.y * 10
+                ctx.lineTo(dirX, dirY)
+                ctx.strokeStyle = "white"
+                ctx.stroke()
+                ctx.beginPath()
+                ctx.arc(dirX, dirY, 2, 0, TAU)
+                ctx.fillStyle = "yellow"
+                ctx.fill()
+                ctx.restore()
+            }
+
+            if (paddleCollisionV2) {
+                // ctx.strokeStyle = "red"
+                // ctx.strokeRect(paddleCollisionV2.paddle.x, paddleCollisionV2.paddle.y, paddle.w, paddle.h)
+
+                ctx.save()
+                ctx.textBaseline = "top"
+                ctx.fillStyle = "white"
+                ctx.font = "20px breakout-font"
+                ctx.fillText(`true`, W - 50, 10)
+                ctx.restore()
+
+                ctx.save()
+                ctx.translate(paddleCollisionV2.collision.resolvedColliderPosition.x, paddleCollisionV2.collision.resolvedColliderPosition.y);
+                ctx.beginPath()
+                ctx.moveTo(0, 0)
+                const dirX = paddleCollisionV2.collision.normal.x * 10
+                const dirY = paddleCollisionV2.collision.normal.y * 10
+                ctx.lineTo(dirX, dirY)
+                ctx.strokeStyle = "white"
+                ctx.stroke()
+                ctx.beginPath()
+                ctx.arc(dirX, dirY, 2, 0, TAU)
+                ctx.fillStyle = "yellow"
+                ctx.fill()
+                ctx.restore()
+
+            }
+
             if (!(brickCollision || paddleCollision || paddleAABBCollision)) {
     
                 ctx.strokeStyle = "red"
@@ -480,11 +544,11 @@ export const play: State = {
         if (keys[" "] == false && serveState) { // serve
             keys[" "] = true // do not process again
             serveState = false
-            const yImpulse = -60
+            const yImpulse = dy0
             ball.dy = yImpulse
             const xHalfRange = 25
             ball.dx = -xHalfRange + Math.random() * (xHalfRange * 2)
-            ball.dx = -70
+            ball.dx = dx0
         }
 
         if (keys["p"] == false) {
@@ -501,6 +565,9 @@ export const play: State = {
         console.log('exit play')
     }
 }
+
+const dx0 = -70
+const dy0 = -60
 
 let paddleMoveX: number
 
@@ -1347,8 +1414,15 @@ function distanceSquared(x1: number, y1: number, x2: number, y2: number): number
 }
 
 
+const brickCollisions: {collision: SweptAABB_AABBCollision, brick: BrickInfo}[] = [];
+
+let paddleCollisionV2: {collision: SweptAABB_AABBCollision, paddle: {x: number, y: number, dx: number, aabb: AABB}} | undefined = undefined
+
 // FIXME: does not work :(
 function updateV2(dt: number) {
+
+    brickCollisions.length = 0;
+    paddleCollisionV2 = undefined
 
     if (serveState) {
 
@@ -1375,6 +1449,9 @@ function updateV2(dt: number) {
 
     ball.aabb.setX(ball.x)
     ball.aabb.setY(ball.y)
+
+    paddle.aabb.setX(paddle.x)
+    paddle.aabb.setY(paddle.y)
 
     // console.log('ball init state', JSON.stringify(ball))
 
@@ -1476,6 +1553,69 @@ function updateV2(dt: number) {
 
         console.log('resolved right collision', 'ball', ball, 'collision', rightCollision)
         return
+    }
+
+    
+    for (const row of bricks) {
+        for (const brick of row) {
+            const ballBrickCollision = checkSweptAABB_AABB(ball.aabb, ballMove, brick.aabb)
+            if (ballBrickCollision) {
+                // console.log('collision with brick', JSON.stringify(brick))
+                brickCollisions.push({collision: ballBrickCollision, brick})
+            }
+        }
+    }
+
+
+    let closestBrickCollision: {collision: SweptAABB_AABBCollision, brick: BrickInfo} | undefined
+
+    if (brickCollisions.length == 1) {
+
+        closestBrickCollision = brickCollisions[0];
+    } else if (brickCollisions.length > 1) {
+        let minDist = distanceSquared(ball.aabb.x, ball.aabb.y, brickCollisions[0].brick.aabb.x, brickCollisions[0].brick.aabb.y)
+        closestBrickCollision = brickCollisions[0];
+
+        for (let i = 1; i < brickCollisions.length; i++) {
+            let dist = distanceSquared(ball.aabb.x, ball.aabb.y, brickCollisions[i].brick.aabb.x, brickCollisions[i].brick.aabb.y)
+
+            if (dist < minDist) {
+                minDist = dist
+                closestBrickCollision = brickCollisions[i]
+            }
+        }
+    }
+
+    if (closestBrickCollision) {
+        ball.x = closestBrickCollision.collision.resolvedColliderPosition.x + 1e-8 * closestBrickCollision.collision.normal.x
+        ball.y = closestBrickCollision.collision.resolvedColliderPosition.y  + 1e-8 * closestBrickCollision.collision.normal.y
+ 
+        if (closestBrickCollision.collision.normal.x != 0) {
+
+            ball.dx = closestBrickCollision.collision.normal.x * Math.abs(ball.dx)
+        }
+
+        if (closestBrickCollision.collision.normal.y != 0) {
+
+            ball.dy = closestBrickCollision.collision.normal.y * Math.abs(ball.dy)
+        }
+
+        return
+    }
+
+    const ballMoveRelativeToPaddle = new Vector2D(ballDx - paddle.dx, ballDy)
+
+    const ballPaddleCollision = checkSweptAABB_AABB(ball.aabb, ballMoveRelativeToPaddle,  paddle.aabb)
+    
+    if (ballPaddleCollision) { 
+        paddleCollisionV2 = {
+            collision: ballPaddleCollision,
+            paddle: {
+                dx: paddle.dx,
+                y: paddle.y,
+                x: paddle.x,
+                aabb: new AABB(paddle.x, paddle.y, paddle.w, paddle.h)
+            }}
     }
 
 
