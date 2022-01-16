@@ -172,7 +172,7 @@ export const play: State = {
         const rowGap = 6
         bricks.push(generateBrickRow(3, 100, 8))
         bricks.push(generateBrickRow(5, 100 + elementsTileH + rowGap, 4))
-        bricks.push(generateBrickRow(5, 100 + 2.25*elementsTileH + rowGap, 15))
+        bricks.push(generateBrickRow(20, 100 + 2.25*elementsTileH + rowGap, 0))
 
         topBorderAABB = new AABB(0, -borderPadding, W, borderPadding)
         bottomBorderAABB = new AABB(0, H, W, borderPadding)
@@ -321,9 +321,20 @@ export const play: State = {
                 ctx.arc(dirX, dirY, 2, 0, TAU)
                 ctx.fillStyle = "yellow"
                 ctx.fill()
+
+                ctx.strokeStyle = "green"
+                ctx.strokeRect(0, 0, ball.w, ball.h)
+
                 ctx.restore()
 
             }
+
+
+            ctx.textBaseline = "top"
+            ctx.fillStyle = "white"
+            ctx.font = "20px breakout-font"
+            ctx.fillText(`${checkCollisionPaddleBrick}`, W - 50, 50)
+
 
             if (!(brickCollision || paddleCollision || paddleAABBCollision)) {
     
@@ -532,13 +543,13 @@ export const play: State = {
 
         if (keys["ArrowRight"] != undefined) { // can keep it pressed
             keys["ArrowRight"] = true
-            paddle.dx += paddleSpeed
+            paddle.dx = paddleSpeed
            
         }
         
         if (keys["ArrowLeft"] != undefined) { // can keep it pressed
             keys["ArrowLeft"] = true // do not process it again
-            paddle.dx -= paddleSpeed;
+            paddle.dx = -paddleSpeed;
         }
 
         if (keys[" "] == false && serveState) { // serve
@@ -549,6 +560,7 @@ export const play: State = {
             const xHalfRange = 25
             ball.dx = -xHalfRange + Math.random() * (xHalfRange * 2)
             ball.dx = dx0
+            ball.y -= EPSILON
         }
 
         if (keys["p"] == false) {
@@ -1414,15 +1426,22 @@ function distanceSquared(x1: number, y1: number, x2: number, y2: number): number
 }
 
 
+const EPSILON = 1e-8
+
+let consecutivePaddleCollisions = 0;
+
 const brickCollisions: {collision: SweptAABB_AABBCollision, brick: BrickInfo}[] = [];
 
 let paddleCollisionV2: {collision: SweptAABB_AABBCollision, paddle: {x: number, y: number, dx: number, aabb: AABB}} | undefined = undefined
 
+let checkCollisionPaddleBrick = true
 // FIXME: does not work :(
 function updateV2(dt: number) {
 
+    // if (paddleCollision) {return}
+
     brickCollisions.length = 0;
-    paddleCollisionV2 = undefined
+
 
     if (serveState) {
 
@@ -1453,10 +1472,27 @@ function updateV2(dt: number) {
     paddle.aabb.setX(paddle.x)
     paddle.aabb.setY(paddle.y)
 
+    // console.log('paddle', JSON.stringify(paddle))
     // console.log('ball init state', JSON.stringify(ball))
 
     let ballDx = ball.dx * dt
     let ballDy = ball.dy * dt
+
+    if (checkCollisionPaddleBrick == false) {
+
+        if (ball.y + ball.h + EPSILON < paddle.y || ball.y > paddle.y + paddle.h + EPSILON) {
+            checkCollisionPaddleBrick = true
+        }
+    }
+
+    if (paddleCollisionV2) {
+        // ball.x += ballDx
+        // ball.y += ballDy
+        paddleCollisionV2 = undefined
+        // return
+    }
+
+
 
     const ballMove = new Vector2D(ballDx, ballDy)
 
@@ -1470,7 +1506,7 @@ function updateV2(dt: number) {
         ball.x += ballDx
         // ball.y += ballDy
 
-        ball.y = 1e-8
+        ball.y = EPSILON
 
         // if (topCollision.normal.x != 0) {
             
@@ -1493,7 +1529,7 @@ function updateV2(dt: number) {
         ball.x += ballDx
         ball.y += ballDy
 
-        ball.y = H - ball.h - 1e-8
+        ball.y = H - ball.h - EPSILON
 
         ball.dy = -Math.abs(ball.dy)
         // if (bottomCollision.normal.x != 0) {
@@ -1517,7 +1553,7 @@ function updateV2(dt: number) {
         ball.x += ballDx
         ball.y += ballDy
 
-        ball.x = 1e-8
+        ball.x = EPSILON
 
         ball.dx = Math.abs(ball.dx)
         // if (leftCollision.normal.x != 0) {
@@ -1539,7 +1575,7 @@ function updateV2(dt: number) {
         ball.x += ballDx
         ball.y += ballDy
 
-        ball.x = W - ball.w - 1e-8
+        ball.x = W - ball.w - EPSILON
 
         ball.dx = -Math.abs(ball.dx)
 
@@ -1587,8 +1623,9 @@ function updateV2(dt: number) {
     }
 
     if (closestBrickCollision) {
-        ball.x = closestBrickCollision.collision.resolvedColliderPosition.x + 1e-8 * closestBrickCollision.collision.normal.x
-        ball.y = closestBrickCollision.collision.resolvedColliderPosition.y  + 1e-8 * closestBrickCollision.collision.normal.y
+        // add epsilon to exit collision completely
+        ball.x = closestBrickCollision.collision.resolvedColliderPosition.x + EPSILON * closestBrickCollision.collision.normal.x
+        ball.y = closestBrickCollision.collision.resolvedColliderPosition.y  + EPSILON * closestBrickCollision.collision.normal.y
  
         if (closestBrickCollision.collision.normal.x != 0) {
 
@@ -1603,11 +1640,33 @@ function updateV2(dt: number) {
         return
     }
 
-    const ballMoveRelativeToPaddle = new Vector2D(ballDx - paddle.dx, ballDy)
+    
+    // const staticBallPaddle = checkAABB_AABB(ball.aabb, paddle.aabb) 
 
+    // paddleCollision = false
+
+    // if (staticBallPaddle) {
+    //     paddleCollision = true
+    //     ball.x = staticBallPaddle.resolvedColliderPosition.x + EPSILON * staticBallPaddle.normal.x
+    //     ball.y = staticBallPaddle.resolvedColliderPosition.y  + EPSILON * staticBallPaddle.normal.y
+
+    //     ball.x += ballDx
+    //     ball.y += ballDy
+    //     return
+    // }
+        
+    
+    console.log('check paddle ball collision', checkCollisionPaddleBrick)
+    if (checkCollisionPaddleBrick) {
+
+
+        const ballMoveRelativeToPaddle = new Vector2D(ballDx - paddle.dx, ballDy)
     const ballPaddleCollision = checkSweptAABB_AABB(ball.aabb, ballMoveRelativeToPaddle,  paddle.aabb)
     
     if (ballPaddleCollision) { 
+        paddleCollision = true
+
+        checkCollisionPaddleBrick = false
         paddleCollisionV2 = {
             collision: ballPaddleCollision,
             paddle: {
@@ -1616,8 +1675,118 @@ function updateV2(dt: number) {
                 x: paddle.x,
                 aabb: new AABB(paddle.x, paddle.y, paddle.w, paddle.h)
             }}
+
+        console.log('brick paddle collision', paddleCollisionV2)
+        
+        // ball.y = paddle.y - ball.h - EPSILON 
+
+        // go to collision point
+        if (ballPaddleCollision.tMin >= EPSILON && ballPaddleCollision.tMin <= 1) {
+
+           
+            ball.x += ballDx * (ballPaddleCollision.tMin - EPSILON) 
+            ball.y += ballDy * (ballPaddleCollision.tMin - EPSILON) 
+
+            paddleCollisionV2.collision.resolvedColliderPosition.x = ball.x
+            paddleCollisionV2.collision.resolvedColliderPosition.y = ball.y
+
+            paddle.x += paddle.dx * (ballPaddleCollision.tMin - EPSILON)
+
+        }
+
+
+        if (ballPaddleCollision.normal.x != 0) { // left or right side
+            const multiplier = 5.5
+            ball.dx = ballPaddleCollision.normal.x * (Math.abs(ball.dx) + multiplier * Math.abs(paddle.dx))
+            ball.x += ball.dx * EPSILON
+            
+            ball.aabb.setY(ball.y)
+
+            // ball.dy = 100
+            if (ball.aabb.center.y < paddle.aabb.center.y) {
+                ball.dy = -Math.abs(ball.dy)
+            } else {
+                ball.dy = Math.abs(ball.dy)
+            }
+        } else if (ballPaddleCollision.normal.y < 0) { // top
+            ball.dy = -Math.abs(ball.dy)
+
+        }
+
+        return
+
+
+        // if (ballPaddleCollision.normal.x != 0) { // left or right side
+        //     ball.dx = ballPaddleCollision.normal.x * (Math.abs(ball.dx) + Math.abs(paddle.dx))
+        //     ball.dy = -Math.abs(ball.dy)
+        // } else if (ballPaddleCollision.normal.y < 0) {
+        //     ball.dy = -Math.abs(ball.dy)
+
+        // }
+
+        // let ballSpeed = Math.sqrt(Math.pow(ball.dx, 2) + Math.pow(ball.dy, 2))
+
+        // if (ballSpeed > 200) {
+        //     console.log('throttle ball speed after backstep collision')
+
+        //     ball.dx = (ball.dx / ballSpeed) * 200 
+        //     ball.dy = (ball.dy / ballSpeed) * 200 
+        // }
+
+        // if (false) {
+
+        // //     ball.x = ballPaddleCollision.resolvedColliderPosition.x + EPSILON * ballPaddleCollision.normal.x
+        // //     ball.y = ballPaddleCollision.resolvedColliderPosition.y  + EPSILON * ballPaddleCollision.normal.y
+        // }
+
+        // if (ballPaddleCollision.normal.y != 0) {
+        //     // ball.dy = ballPaddleCollision.normal.y * Math.abs(ball.dy)
+        //     console.log('oh oh')
+        //     ball.dy = -Math.abs(ball.dy)
+        // }
+
+        
+        // if (ballPaddleCollision.tMin >= 0 && ballPaddleCollision.tMin <= 1) {
+
+        //     // const remaining = dt - ballPaddleCollision.tMin * dt
+
+        //     // ball.x += ball.x * remaining
+        //     // ball.y += ball.y * remaining
+        //     console.log('adjust paddle by ratio', ballPaddleCollision.tMin)
+        //     paddle.dx *= ballPaddleCollision.tMin
+        // } 
+
+        // paddle.x += paddle.dx
+        // paddleMoveX = paddle.dx
+        // paddle.dx = 0
+
+        // if (paddle.x < 0) {
+        //     paddle.x = 0
+        // }
+
+        // if (paddle.x + paddle.w > W) {
+        //     paddle.x = W - paddle.w
+        // }
+
+        // consecutivePaddleCollisions++
+
+        // console.log('consecutive paddle collisions', consecutivePaddleCollisions)
+
+        // return
+    } else {
+        // if (consecutivePaddleCollisions > 0) {
+        //     console.log('reset paddle collisions',)
+        //     consecutivePaddleCollisions = 0
+        // }
     }
 
+
+    } else {
+
+        // go out of the zone of collision
+    }
+    
+    
 
     ball.x += ballDx
     ball.y += ballDy
