@@ -508,12 +508,13 @@ function updateV2(dt: number) {
                 paddleCollisionV2.collision.resolvedColliderPosition.y = ball.y
 
                 paddle.x += paddle.dx * (ballPaddleCollision.tMin - EPSILON)
-
             }
 
 
             if (ballPaddleCollision.normal.x != 0) { // left or right side
-                ball.dx = ballPaddleCollision.normal.x * (Math.abs(ball.dx) + 5.5 * Math.abs(paddle.dx))
+                const additionalSpeed = 1 * Math.abs(paddle.dx) / dt
+                console.log('add speed to ball', additionalSpeed)
+                ball.dx = ballPaddleCollision.normal.x * (Math.abs(ball.dx) + additionalSpeed)
                 ball.x += ball.dx * EPSILON
                 
                 ball.aabb.setY(ball.y)
@@ -527,7 +528,7 @@ function updateV2(dt: number) {
                 ball.dy = -Math.abs(ball.dy)
             }
 
-            constrainBallSpeed()
+            // do not constrain ball speed to let ball escape from the paddle
             return
         }
     }
@@ -546,16 +547,18 @@ function updateV2(dt: number) {
     if (paddle.x + paddle.w > W) {
         paddle.x = W - paddle.w
     }
-
 }
 
+const maxBallSpeedX = 200;
+const maxBallSpeedY = 200;
+
 function constrainBallSpeed() {
-    const ballSpeed = Math.sqrt(Math.pow(ball.dx, 2) + Math.pow(ball.dy, 2))
-
-    if (ballSpeed > MAX_BALL_SPEED) {
-        console.log('throttle ball speed after backstep collision')
-
-        ball.dx = (ball.dx / ballSpeed) * MAX_BALL_SPEED 
-        ball.dy = (ball.dy / ballSpeed) * MAX_BALL_SPEED
+    if (Math.abs(ball.dx) > maxBallSpeedX) {
+        console.debug('throttle ball X')
+        ball.dx = Math.sign(ball.dx) * maxBallSpeedX
+    }
+    if (Math.abs(ball.dy) > maxBallSpeedY) {
+        console.debug('throttle ball Y')
+        ball.dy = Math.sign(ball.dy) * maxBallSpeedY
     }
 }
