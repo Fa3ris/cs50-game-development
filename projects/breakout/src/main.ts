@@ -57,6 +57,11 @@ window.addEventListener('keydown', function(e) {
       console.log("prevent scrolling")
       e.preventDefault();
     }
+
+    if(e.key === "ArrowDown" && e.target == document.body) {
+        console.log("prevent scrolling")
+        e.preventDefault();
+      }
   });
 
 
