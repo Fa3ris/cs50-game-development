@@ -80,7 +80,8 @@ let checkCollisionPaddleBrick = true
 const ballDx0 = -70
 const ballDy0 = -60
 
-const MAX_BALL_SPEED = 300
+const maxBallSpeedX = 200;
+const maxBallSpeedY = 200;
 
 export const play: State = {
     enter: function (): void {
@@ -147,7 +148,233 @@ export const play: State = {
             }
         }
 
-        updateV2(dt)
+        brickCollisions.length = 0;
+
+        if (serveState) {
+    
+            paddle.x += paddle.dx
+            paddle.dx = 0
+        
+            if (paddle.x < 0) {
+                paddle.x = 0
+            }
+        
+            if (paddle.x + paddle.w > W) {
+                paddle.x = W - paddle.w
+            }
+    
+            ball.x = paddle.x + (paddle.w - ball.w) / 2,
+            ball.y = paddle.y - ball.h
+            return
+        }
+    
+    
+        ball.aabb.setX(ball.x)
+        ball.aabb.setY(ball.y)
+    
+        paddle.aabb.setX(paddle.x)
+        paddle.aabb.setY(paddle.y)
+    
+    
+        const ballDx = ball.dx * dt
+        const ballDy = ball.dy * dt
+    
+        if (checkCollisionPaddleBrick == false) {
+            if (ball.y + ball.h + EPSILON < paddle.y || ball.y > paddle.y + paddle.h + EPSILON) {
+                checkCollisionPaddleBrick = true
+            }
+        }
+    
+        if (paddleCollisionV2) {
+            paddleCollisionV2 = undefined
+        }
+    
+        paddleCollision = false
+    
+        const ballMove = new Vector2D(ballDx, ballDy)
+    
+        const topCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  topBorderAABB)
+    
+        if (topCollision) {
+    
+            ball.x += ballDx * topCollision.tMin
+    
+            ball.y = EPSILON
+    
+            ball.dy = Math.abs(ball.dy)
+    
+            constrainBallSpeed()
+            console.debug('resolved top collision', 'ball', ball, 'collision', topCollision)
+            return
+        }
+        const bottomCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  bottomBorderAABB)
+    
+        if (bottomCollision) {
+    
+            ball.x += ballDx * bottomCollision.tMin
+    
+            ball.y = H - ball.h - EPSILON
+    
+            ball.dy = -Math.abs(ball.dy)
+    
+            constrainBallSpeed()
+            console.debug('resolved bottom collision', 'ball', ball, 'collision', bottomCollision)
+            return
+    
+        }
+        const leftCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  leftBorderAABB)
+    
+        if (leftCollision) {
+    
+            ball.y += ballDy * leftCollision.tMin
+    
+            ball.x = EPSILON
+    
+            ball.dx = Math.abs(ball.dx)
+    
+            constrainBallSpeed()
+            console.debug('resolved left collision', 'ball', ball, 'collision', leftCollision)
+            return
+        }
+        const rightCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  rightBorderAABB)
+    
+        if (rightCollision) {
+            ball.y += ballDy * rightCollision.tMin
+    
+            ball.x = W - ball.w - EPSILON
+            ball.dx = -Math.abs(ball.dx)
+    
+            constrainBallSpeed()
+            console.debug('resolved right collision', 'ball', ball, 'collision', rightCollision)
+    
+            return
+        }
+    
+        
+        for (const row of bricks) {
+            for (const brick of row) {
+                if (brick.life <= 0) { continue }
+                const ballBrickCollision = checkSweptAABB_AABB(ball.aabb, ballMove, brick.aabb)
+                if (ballBrickCollision) {
+                    brickCollisions.push({collision: ballBrickCollision, brick})
+                }
+            }
+        }
+    
+
+        for (const brickCollision of brickCollisions) {
+            brickCollision.brick.life--
+        }
+    
+        let closestBrickCollision: {collision: SweptAABB_AABBCollision, brick: BrickInfo} | undefined
+    
+        if (brickCollisions.length == 1) {
+    
+            closestBrickCollision = brickCollisions[0];
+        } else if (brickCollisions.length > 1) {
+            let minDist = distanceSquared(ball.aabb.x, ball.aabb.y, brickCollisions[0].brick.aabb.x, brickCollisions[0].brick.aabb.y)
+            closestBrickCollision = brickCollisions[0];
+    
+            for (let i = 1; i < brickCollisions.length; i++) {
+                const dist = distanceSquared(ball.aabb.x, ball.aabb.y, brickCollisions[i].brick.aabb.x, brickCollisions[i].brick.aabb.y)
+    
+                if (dist < minDist) {
+                    minDist = dist
+                    closestBrickCollision = brickCollisions[i]
+                }
+            }
+        }
+    
+        if (closestBrickCollision) {
+            // add epsilon to exit collision completely
+            ball.x = closestBrickCollision.collision.resolvedColliderPosition.x + EPSILON * closestBrickCollision.collision.normal.x
+            ball.y = closestBrickCollision.collision.resolvedColliderPosition.y  + EPSILON * closestBrickCollision.collision.normal.y
+     
+            if (closestBrickCollision.collision.normal.x != 0) {
+    
+                ball.dx = closestBrickCollision.collision.normal.x * Math.abs(ball.dx)
+            }
+    
+            if (closestBrickCollision.collision.normal.y != 0) {
+    
+                ball.dy = closestBrickCollision.collision.normal.y * Math.abs(ball.dy)
+            }
+    
+            constrainBallSpeed()
+    
+            return
+        }
+    
+        
+        if (checkCollisionPaddleBrick) {
+    
+            const ballMoveRelativeToPaddle = new Vector2D(ballDx - paddle.dx, ballDy)
+            const ballPaddleCollision = checkSweptAABB_AABB(ball.aabb, ballMoveRelativeToPaddle,  paddle.aabb)
+            
+            if (ballPaddleCollision) { 
+                paddleCollision = true
+    
+                checkCollisionPaddleBrick = false
+                paddleCollisionV2 = {
+                    collision: ballPaddleCollision,
+                    paddle: {
+                        dx: paddle.dx,
+                        y: paddle.y,
+                        x: paddle.x,
+                        aabb: new AABB(paddle.x, paddle.y, paddle.w, paddle.h)
+                    }}
+    
+                console.debug('brick paddle collision', paddleCollisionV2)
+                
+                // go to collision point
+                if (ballPaddleCollision.tMin >= EPSILON && ballPaddleCollision.tMin <= 1) {
+    
+                    ball.x += ballDx * (ballPaddleCollision.tMin - EPSILON) 
+                    ball.y += ballDy * (ballPaddleCollision.tMin - EPSILON) 
+    
+                    paddleCollisionV2.collision.resolvedColliderPosition.x = ball.x
+                    paddleCollisionV2.collision.resolvedColliderPosition.y = ball.y
+    
+                    paddle.x += paddle.dx * (ballPaddleCollision.tMin - EPSILON)
+                }
+    
+    
+                if (ballPaddleCollision.normal.x != 0) { // left or right side
+                    const additionalSpeed = 1 * Math.abs(paddle.dx) / dt
+                    console.log('add speed to ball', additionalSpeed)
+                    ball.dx = ballPaddleCollision.normal.x * (Math.abs(ball.dx) + additionalSpeed)
+                    ball.x += ball.dx * EPSILON
+                    
+                    ball.aabb.setY(ball.y)
+    
+                    if (ball.aabb.center.y < paddle.aabb.center.y + 4) { // add 4 to be less strict 
+                        ball.dy = -Math.abs(ball.dy)
+                    } else {
+                        ball.dy = Math.abs(ball.dy)
+                    }
+                } else if (ballPaddleCollision.normal.y < 0) { // top
+                    ball.dy = -Math.abs(ball.dy)
+                }
+    
+                // do not constrain ball speed to let ball escape from the paddle
+                return
+            }
+        }
+        
+    
+        ball.x += ballDx
+        ball.y += ballDy
+    
+        paddle.x += paddle.dx
+        paddle.dx = 0
+    
+        if (paddle.x < 0) {
+            paddle.x = 0
+        }
+    
+        if (paddle.x + paddle.w > W) {
+            paddle.x = W - paddle.w
+        }
     },
 
 
@@ -157,6 +384,7 @@ export const play: State = {
 
         for (const brickRow of bricks) {
             for (const brick of brickRow) {
+                if (brick.life <= 0) { continue }
                 drawBrick(ctx, brick.index, brick.x, brick.y)
             }
         }
@@ -285,8 +513,6 @@ export const play: State = {
 }
 
 
-
-
 function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] {
     const res: BrickInfo[] = [];
     const totalW =  (n * elementsTileW) + ((n - 1) * columnGap);
@@ -317,240 +543,6 @@ function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] 
 function distanceSquared(x1: number, y1: number, x2: number, y2: number): number {
     return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)
 }
-
-
-function updateV2(dt: number) {
-
-    brickCollisions.length = 0;
-
-    if (serveState) {
-
-        paddle.x += paddle.dx
-        paddle.dx = 0
-    
-        if (paddle.x < 0) {
-            paddle.x = 0
-        }
-    
-        if (paddle.x + paddle.w > W) {
-            paddle.x = W - paddle.w
-        }
-
-        ball.x = paddle.x + (paddle.w - ball.w) / 2,
-        ball.y = paddle.y - ball.h
-        return
-    }
-
-
-    ball.aabb.setX(ball.x)
-    ball.aabb.setY(ball.y)
-
-    paddle.aabb.setX(paddle.x)
-    paddle.aabb.setY(paddle.y)
-
-
-    let ballDx = ball.dx * dt
-    let ballDy = ball.dy * dt
-
-    if (checkCollisionPaddleBrick == false) {
-        if (ball.y + ball.h + EPSILON < paddle.y || ball.y > paddle.y + paddle.h + EPSILON) {
-            checkCollisionPaddleBrick = true
-        }
-    }
-
-    if (paddleCollisionV2) {
-        paddleCollisionV2 = undefined
-    }
-
-    paddleCollision = false
-
-    const ballMove = new Vector2D(ballDx, ballDy)
-
-    const topCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  topBorderAABB)
-
-    if (topCollision) {
-        ballDx *= topCollision.tMin
-
-        ball.x += ballDx
-
-        ball.y = EPSILON
-
-        ball.dy = Math.abs(ball.dy)
-
-        constrainBallSpeed()
-        console.debug('resolved top collision', 'ball', ball, 'collision', topCollision)
-        return
-    }
-    const bottomCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  bottomBorderAABB)
-
-    if (bottomCollision) {
-        ballDx *= bottomCollision.tMin
-
-        ball.x += ballDx
-
-        ball.y = H - ball.h - EPSILON
-
-        ball.dy = -Math.abs(ball.dy)
-
-        constrainBallSpeed()
-        console.debug('resolved bottom collision', 'ball', ball, 'collision', bottomCollision)
-        return
-
-    }
-    const leftCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  leftBorderAABB)
-
-    if (leftCollision) {
-        ballDy *= leftCollision.tMin
-
-        ball.y += ballDy
-
-        ball.x = EPSILON
-
-        ball.dx = Math.abs(ball.dx)
-
-        constrainBallSpeed()
-        console.debug('resolved left collision', 'ball', ball, 'collision', leftCollision)
-        return
-    }
-    const rightCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  rightBorderAABB)
-
-    if (rightCollision) {
-        ballDy *= rightCollision.tMin
-        ball.y += ballDy
-
-        ball.x = W - ball.w - EPSILON
-        ball.dx = -Math.abs(ball.dx)
-
-        constrainBallSpeed()
-        console.debug('resolved right collision', 'ball', ball, 'collision', rightCollision)
-
-        return
-    }
-
-    
-    for (const row of bricks) {
-        for (const brick of row) {
-            const ballBrickCollision = checkSweptAABB_AABB(ball.aabb, ballMove, brick.aabb)
-            if (ballBrickCollision) {
-                brickCollisions.push({collision: ballBrickCollision, brick})
-            }
-        }
-    }
-
-
-    let closestBrickCollision: {collision: SweptAABB_AABBCollision, brick: BrickInfo} | undefined
-
-    if (brickCollisions.length == 1) {
-
-        closestBrickCollision = brickCollisions[0];
-    } else if (brickCollisions.length > 1) {
-        let minDist = distanceSquared(ball.aabb.x, ball.aabb.y, brickCollisions[0].brick.aabb.x, brickCollisions[0].brick.aabb.y)
-        closestBrickCollision = brickCollisions[0];
-
-        for (let i = 1; i < brickCollisions.length; i++) {
-            let dist = distanceSquared(ball.aabb.x, ball.aabb.y, brickCollisions[i].brick.aabb.x, brickCollisions[i].brick.aabb.y)
-
-            if (dist < minDist) {
-                minDist = dist
-                closestBrickCollision = brickCollisions[i]
-            }
-        }
-    }
-
-    if (closestBrickCollision) {
-        // add epsilon to exit collision completely
-        ball.x = closestBrickCollision.collision.resolvedColliderPosition.x + EPSILON * closestBrickCollision.collision.normal.x
-        ball.y = closestBrickCollision.collision.resolvedColliderPosition.y  + EPSILON * closestBrickCollision.collision.normal.y
- 
-        if (closestBrickCollision.collision.normal.x != 0) {
-
-            ball.dx = closestBrickCollision.collision.normal.x * Math.abs(ball.dx)
-        }
-
-        if (closestBrickCollision.collision.normal.y != 0) {
-
-            ball.dy = closestBrickCollision.collision.normal.y * Math.abs(ball.dy)
-        }
-
-        constrainBallSpeed()
-
-        return
-    }
-
-    
-    if (checkCollisionPaddleBrick) {
-
-        const ballMoveRelativeToPaddle = new Vector2D(ballDx - paddle.dx, ballDy)
-        const ballPaddleCollision = checkSweptAABB_AABB(ball.aabb, ballMoveRelativeToPaddle,  paddle.aabb)
-        
-        if (ballPaddleCollision) { 
-            paddleCollision = true
-
-            checkCollisionPaddleBrick = false
-            paddleCollisionV2 = {
-                collision: ballPaddleCollision,
-                paddle: {
-                    dx: paddle.dx,
-                    y: paddle.y,
-                    x: paddle.x,
-                    aabb: new AABB(paddle.x, paddle.y, paddle.w, paddle.h)
-                }}
-
-            console.debug('brick paddle collision', paddleCollisionV2)
-            
-            // go to collision point
-            if (ballPaddleCollision.tMin >= EPSILON && ballPaddleCollision.tMin <= 1) {
-
-                ball.x += ballDx * (ballPaddleCollision.tMin - EPSILON) 
-                ball.y += ballDy * (ballPaddleCollision.tMin - EPSILON) 
-
-                paddleCollisionV2.collision.resolvedColliderPosition.x = ball.x
-                paddleCollisionV2.collision.resolvedColliderPosition.y = ball.y
-
-                paddle.x += paddle.dx * (ballPaddleCollision.tMin - EPSILON)
-            }
-
-
-            if (ballPaddleCollision.normal.x != 0) { // left or right side
-                const additionalSpeed = 1 * Math.abs(paddle.dx) / dt
-                console.log('add speed to ball', additionalSpeed)
-                ball.dx = ballPaddleCollision.normal.x * (Math.abs(ball.dx) + additionalSpeed)
-                ball.x += ball.dx * EPSILON
-                
-                ball.aabb.setY(ball.y)
-
-                if (ball.aabb.center.y < paddle.aabb.center.y + 4) { // add 4 to be less strict 
-                    ball.dy = -Math.abs(ball.dy)
-                } else {
-                    ball.dy = Math.abs(ball.dy)
-                }
-            } else if (ballPaddleCollision.normal.y < 0) { // top
-                ball.dy = -Math.abs(ball.dy)
-            }
-
-            // do not constrain ball speed to let ball escape from the paddle
-            return
-        }
-    }
-    
-
-    ball.x += ballDx
-    ball.y += ballDy
-
-    paddle.x += paddle.dx
-    paddle.dx = 0
-
-    if (paddle.x < 0) {
-        paddle.x = 0
-    }
-
-    if (paddle.x + paddle.w > W) {
-        paddle.x = W - paddle.w
-    }
-}
-
-const maxBallSpeedX = 200;
-const maxBallSpeedY = 200;
 
 function constrainBallSpeed() {
     if (Math.abs(ball.dx) > maxBallSpeedX) {
