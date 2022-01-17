@@ -1,15 +1,13 @@
-import { AABB, AABB_AABBCollision, SweptAABB_AABBCollision, Vector2D } from "~common/geometry";
-import { currentFrame } from "~common/loop";
-import { checkAABB_AABB, checkSweptAABB_AABB } from "~projects/collision-detection/src/collision";
+import { AABB, SweptAABB_AABBCollision, Vector2D } from "~common/geometry";
+import { checkSweptAABB_AABB } from "~projects/collision-detection/src/collision";
 import { TAU } from "~projects/collision-detection/src/drawing";
-import { sweptAABB_AABB } from "~projects/collision-detection/src/swept-aabb-aabb";
-import { ctx, H, keys, W, loopStep } from "../main";
-import { segmentsIntersect } from "../segment-intersection";
-import { drawPaddle, elementsTileW, elementsTileH, PaddleColor, PaddleSize, ballDim, drawBall, drawBrick } from "../tile-renderer";
+import { ctx, H, keys, loopStep, W } from "../main";
+import { enterState, GameState } from "../state-machine";
+import { ballDim, drawBall, drawBrick, drawPaddle, elementsTileH, elementsTileW, PaddleColor, PaddleSize } from "../tile-renderer";
 import { State } from "./State";
 
 
-type Paddle = {
+export type Paddle = {
     size: PaddleSize,
     color: PaddleColor,
     w: number,
@@ -27,7 +25,7 @@ let serveState = true;
 
 let paddleCollision = false
 
-type BrickInfo = {
+export type BrickInfo = {
     x: number,
     y: number,
     life: number,
@@ -35,7 +33,7 @@ type BrickInfo = {
     aabb: AABB,
 }
 
-const bricks: BrickInfo[][] = []
+let bricks: BrickInfo[][]
 
 type Ball = {
     w: number,
@@ -83,22 +81,37 @@ const ballDy0 = -60
 const maxBallSpeedX = 200;
 const maxBallSpeedY = 200;
 
+let life: number;
+
+export function setLife(_life: number) {
+    life = _life;
+}
+
+export function setPaddle(_paddle: Paddle) {
+    paddle = _paddle
+}
+
+export function setBricks(_bricks: BrickInfo[][]) {
+    bricks = _bricks
+}
+
+let score: number
+export function resetScore() {
+    score = 0;    
+}
+
 export const play: State = {
     enter: function (): void {
         console.log('enter play')
-        const paddleW =  PaddleSize.MEDIUM * elementsTileW
-        const paddleX =  (W - paddleW) / 2
-        const paddleY =  H - 5 - elementsTileH
-        paddle = {
-          size: PaddleSize.MEDIUM,
-          color: PaddleColor.BLUE,
-          w: paddleW,
-          h: elementsTileH,
-          x: paddleX,
-          y: paddleY,
-          dx: 0,
-          aabb: new AABB(paddleX, paddleY, paddleW, elementsTileH)
-        };
+        serveState = true
+        checkCollisionPaddleBrick = true
+
+        paddleCollision = false
+        brickCollisions.length = 0;
+        paddleCollisionV2 = undefined
+
+        paddle.x = (W - paddle.w) / 2
+        paddle.y =  H - 5 - elementsTileH
 
         const ballX = (W - ballDim) / 2
         const ballY = paddle.y - ballDim
@@ -113,27 +126,33 @@ export const play: State = {
             aabb: new AABB(ballX, ballY, ballDim, ballDim)
         }
 
-        const rowGap = 6
-        bricks.push(generateBrickRow(3, 100, 8))
-        bricks.push(generateBrickRow(5, 100 + elementsTileH + rowGap, 4))
-        bricks.push(generateBrickRow(20, 100 + 2.25*elementsTileH + rowGap, 0))
+        if (!topBorderAABB) {
+            topBorderAABB = new AABB(0, -borderPadding, W, borderPadding)
+        }
 
-        topBorderAABB = new AABB(0, -borderPadding, W, borderPadding)
-        bottomBorderAABB = new AABB(0, H, W, borderPadding)
-        leftBorderAABB = new AABB(-borderPadding, 0, borderPadding, H)
-        rightBorderAABB = new AABB(W, 0, borderPadding, H)
+        if (!bottomBorderAABB) {
+            bottomBorderAABB = new AABB(0, H, W, borderPadding)
+        }
+
+        if (!leftBorderAABB) {
+            leftBorderAABB = new AABB(-borderPadding, 0, borderPadding, H)
+        }
+
+        if (!rightBorderAABB) {
+            rightBorderAABB = new AABB(W, 0, borderPadding, H)
+        }
 
         if (debugPlay) {
             // values to trigger aabb collision
 
-            paddle.x = 204
-            paddle.y = 212
-            paddle.dx = 0
+            // paddle.x = 204
+            // paddle.y = 212
+            // paddle.dx = 0
     
-            ball.x = 197.16666666666632
-            ball.y = 150
+            // ball.x = 197.16666666666632
+            // ball.y = 150
     
-            ball.y -= 10
+            // ball.y -= 10
     
             ball.dx = ballDx0
             ball.dy = ballDy0
@@ -185,9 +204,7 @@ export const play: State = {
             }
         }
     
-        if (paddleCollisionV2) {
-            paddleCollisionV2 = undefined
-        }
+        paddleCollisionV2 = undefined
     
         paddleCollision = false
     
@@ -207,21 +224,14 @@ export const play: State = {
             console.debug('resolved top collision', 'ball', ball, 'collision', topCollision)
             return
         }
-        const bottomCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  bottomBorderAABB)
-    
-        if (bottomCollision) {
-    
-            ball.x += ballDx * bottomCollision.tMin
-    
-            ball.y = H - ball.h - EPSILON
-    
-            ball.dy = -Math.abs(ball.dy)
-    
-            constrainBallSpeed()
-            console.debug('resolved bottom collision', 'ball', ball, 'collision', bottomCollision)
+
+        if (ball.y > H) {
+            life--
+            console.log("lose life", life)
+            enterState(GameState.PLAY)
             return
-    
         }
+  
         const leftCollision = checkSweptAABB_AABB(ball.aabb, ballMove,  leftBorderAABB)
     
         if (leftCollision) {
@@ -264,6 +274,9 @@ export const play: State = {
 
         for (const brickCollision of brickCollisions) {
             brickCollision.brick.life--
+            brickCollision.brick.index = brickCollision.brick.life - 1
+            score++
+            console.log('score point', score)
         }
     
         let closestBrickCollision: {collision: SweptAABB_AABBCollision, brick: BrickInfo} | undefined
@@ -513,7 +526,7 @@ export const play: State = {
 }
 
 
-function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] {
+export function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] {
     const res: BrickInfo[] = [];
     const totalW =  (n * elementsTileW) + ((n - 1) * columnGap);
 

@@ -1,5 +1,8 @@
+import { AABB } from "~common/geometry";
 import { ctx, H, keys, W } from "../main";
 import { enterState, GameState } from "../state-machine";
+import { PaddleSize, PaddleColor, elementsTileH, elementsTileW } from "../tile-renderer";
+import { generateBrickRow, Paddle, resetScore, setBricks, setLife, setPaddle } from "./play";
 import { State } from "./State";
 
 
@@ -64,6 +67,26 @@ export const gameTitle: State = {
             keys["Enter"] = true
 
             if (titleSelectHighlightedIndex == 0) {
+                setPaddle(generatePaddle(PaddleSize.MEDIUM, PaddleColor.BLUE))
+                const bricks = []
+                const rowGap = 6
+                const firstRow = generateBrickRow(3, 100, 8)
+                for (let index = 0; index < firstRow.length; index = index + 2) {
+                    firstRow[index].index = 1;
+                    firstRow[index].life = 2;
+                    
+                }
+                bricks.push(firstRow)
+                bricks.push(generateBrickRow(5, 100 + elementsTileH + rowGap, 4))
+                const thirdRow = generateBrickRow(20, 100 + 2.25*elementsTileH + rowGap, 0)
+                for (let index = 0; index < thirdRow.length; index = index + 2) {
+                    thirdRow[index].index = 1;
+                    thirdRow[index].life = 2;
+                }
+                bricks.push(thirdRow)
+                setBricks(bricks)
+                setLife(3)
+                resetScore()
                 enterState(GameState.PLAY)
             } else {
                 console.log('title -> high score')
@@ -75,4 +98,21 @@ export const gameTitle: State = {
     exit: function (): void {
         console.debug("exit title")
     }
+}
+
+
+function generatePaddle(size: PaddleSize, color: PaddleColor): Paddle {
+    const paddleW =  size * elementsTileW
+    const paddleX =  (W - paddleW) / 2
+    const paddleY =  H - 5 - elementsTileH
+    return {
+        size: size,
+        color: color,
+        w: paddleW,
+        h: elementsTileH,
+        x: paddleX,
+        y: paddleY,
+        dx: 0,
+        aabb: new AABB(paddleX, paddleY, paddleW, elementsTileH)
+    };
 }
