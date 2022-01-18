@@ -1,8 +1,8 @@
 import { AABB } from "~common/geometry";
 import { ctx, H, keys, W } from "../main";
 import { enterState, GameState } from "../state-machine";
-import { PaddleSize, PaddleColor, elementsTileH, elementsTileW } from "../tile-renderer";
-import { generateBrickRow, Paddle, resetScore, setBricks, setLife, setPaddle } from "./play";
+import { elementsTileH, elementsTileW, PaddleColor, PaddleSize } from "../tile-renderer";
+import { generateBrickRow, Paddle, resetScore, setBricks, resetLife, setPaddle } from "./play";
 import { State } from "./State";
 
 
@@ -85,7 +85,7 @@ export const gameTitle: State = {
                 }
                 bricks.push(thirdRow)
                 setBricks(bricks)
-                setLife(1)
+                resetLife()
                 resetScore()
                 enterState(GameState.PLAY)
             } else {

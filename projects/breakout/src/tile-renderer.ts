@@ -138,6 +138,17 @@ export function drawBall(ctx: CanvasRenderingContext2D, index: number, x: number
    x, y, ballDim, ballDim)
 }
 
+export const heartDim = 10
+
+export function drawHeart(ctx: CanvasRenderingContext2D, full:boolean, x: number, y: number) {
+  const offset = full ? 0 : 1;
+  const xSheetOffset = tilesInfos[22].x * elementsTileW + offset * heartDim
+  const ySheetOffset = tilesInfos[22].y * elementsTileH
+  ctx.drawImage(sprites["elements"],
+  xSheetOffset, ySheetOffset, heartDim, heartDim,
+      x, y, heartDim, heartDim)
+}
+
 function _tilePositions(nbRows: number, nbCols: number): TileInfo[] {
   const res = [];
   for (let row = 0; row < nbRows; row++) {

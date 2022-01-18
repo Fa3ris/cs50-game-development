@@ -3,7 +3,7 @@ import { checkSweptAABB_AABB } from "~projects/collision-detection/src/collision
 import { TAU } from "~projects/collision-detection/src/drawing";
 import { ctx, H, keys, loopStep, W } from "../main";
 import { enterState, GameState } from "../state-machine";
-import { ballDim, drawBall, drawBrick, drawPaddle, elementsTileH, elementsTileW, PaddleColor, PaddleSize } from "../tile-renderer";
+import { ballDim, drawBall, drawBrick, drawHeart, drawPaddle, elementsTileH, elementsTileW, heartDim, PaddleColor, PaddleSize } from "../tile-renderer";
 import { State } from "./State";
 
 
@@ -83,8 +83,13 @@ const maxBallSpeedY = 200;
 
 let life: number;
 
-export function setLife(_life: number) {
-    life = _life;
+const BASE_MAX_LIFE = 3
+let MAX_LIFE = BASE_MAX_LIFE
+const heartBaseX = 10
+const heartY = 10
+
+export function resetLife() {
+    life = MAX_LIFE;
 }
 
 export function setPaddle(_paddle: Paddle) {
@@ -494,6 +499,17 @@ export const play: State = {
                 ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h)
             }
 
+        }
+
+        /* draw LIFE */
+        let offsetX = heartDim + 2
+        
+        for (let index = 0; index < life; index++) {
+            drawHeart(ctx, true, heartBaseX + index * offsetX, heartY)
+        }
+
+        for (let index = life; index < MAX_LIFE; index++) {
+            drawHeart(ctx, false, heartBaseX + index * offsetX, heartY)
         }
     },
 
