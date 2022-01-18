@@ -2,7 +2,7 @@ import { AABB } from "~common/geometry";
 import { ctx, H, keys, W } from "../main";
 import { enterState, GameState } from "../state-machine";
 import { elementsTileH, elementsTileW, PaddleColor, PaddleSize } from "../tile-renderer";
-import { generateBrickRow, Paddle, resetScore, setBricks, resetLife, setPaddle } from "./play";
+import { generateBrickRow, Paddle, resetScore, setBricks, resetLife, setPaddle, setWinScore } from "./play";
 import { State } from "./State";
 
 
@@ -70,20 +70,37 @@ export const gameTitle: State = {
                 setPaddle(generatePaddle(PaddleSize.MEDIUM, PaddleColor.BLUE))
                 const bricks = []
                 const rowGap = 6
-                const firstRow = generateBrickRow(3, 100, 8)
+
+                const firstRow = generateBrickRow(0, 100, 8)
                 for (let index = 0; index < firstRow.length; index = index + 2) {
                     firstRow[index].index = 1;
                     firstRow[index].life = 2;
                     
                 }
+                
+                let winScore = 0;
+                for (const brick of firstRow) {
+                    winScore += brick.life
+                }
                 bricks.push(firstRow)
-                bricks.push(generateBrickRow(5, 100 + elementsTileH + rowGap, 4))
-                const thirdRow = generateBrickRow(20, 100 + 2.25*elementsTileH + rowGap, 0)
-                for (let index = 0; index < thirdRow.length; index = index + 2) {
+                const secondRow = generateBrickRow(0, 100 + elementsTileH + rowGap, 4)
+                
+                for (const brick of secondRow) {
+                    winScore += brick.life
+                }
+                bricks.push(secondRow)
+                const thirdRow = generateBrickRow(3, 100 + 2.25*elementsTileH + rowGap, 0)
+                for (let index = 0; index < 0; index = index + 2) {
                     thirdRow[index].index = 1;
                     thirdRow[index].life = 2;
                 }
+
+                for (const brick of thirdRow) {
+                    winScore += brick.life
+                }
                 bricks.push(thirdRow)
+
+                setWinScore(winScore)
                 setBricks(bricks)
                 resetLife()
                 resetScore()

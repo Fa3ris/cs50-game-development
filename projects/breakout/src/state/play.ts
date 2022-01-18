@@ -100,6 +100,12 @@ export function setBricks(_bricks: BrickInfo[][]) {
     bricks = _bricks
 }
 
+let winScore: number
+export function setWinScore(score: number) {
+    console.log('win score', score)
+    winScore = score;
+}
+
 let score: number
 export function resetScore() {
     score = 0;    
@@ -169,6 +175,12 @@ export const play: State = {
     },
 
     update: function (dt: number): void {
+
+        if (score == winScore) {
+            console.log("You Win")
+            enterState(GameState.WIN)
+            return
+        }
 
         if (debugPlay) {
 
@@ -502,7 +514,7 @@ export const play: State = {
         }
 
         /* draw LIFE */
-        let offsetX = heartDim + 2
+        const offsetX = heartDim + 2
         
         for (let index = 0; index < life; index++) {
             drawHeart(ctx, true, heartBaseX + index * offsetX, heartY)

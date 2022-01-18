@@ -2,12 +2,14 @@ import { State } from "./state/State";
 import { gameTitle } from "./state/game-title";
 import { play } from "./state/play";
 import { lose } from "./state/lose";
+import { win } from "./state/win";
 
 export enum GameState {
     TITLE,
     PLAY,
     HIGHSCORE,
     LOSE,
+    WIN,
 }
 
 let currentState: State
@@ -29,6 +31,9 @@ export function enterState(newState: GameState): State {
         case GameState.LOSE:
             currentState = lose
             break
+            case GameState.WIN:
+                currentState = win;
+                break
 
         default:
             throw 'unknown state'
