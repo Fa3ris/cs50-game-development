@@ -25,7 +25,7 @@ export const gameTitle: State = {
 
 
     draw: function (): void {
-        
+        ctx.textBaseline = 'alphabetic'
         ctx.font = "40px/1.5 breakout-font"
         ctx.fillStyle = defaultColor
         let height = H/2
@@ -85,7 +85,7 @@ export const gameTitle: State = {
                 }
                 bricks.push(thirdRow)
                 setBricks(bricks)
-                setLife(3)
+                setLife(1)
                 resetScore()
                 enterState(GameState.PLAY)
             } else {

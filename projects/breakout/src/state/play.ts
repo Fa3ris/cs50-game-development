@@ -100,6 +100,10 @@ export function resetScore() {
     score = 0;    
 }
 
+export function getScore() {
+    return score
+}
+
 export const play: State = {
     enter: function (): void {
         console.log('enter play')
@@ -228,7 +232,12 @@ export const play: State = {
         if (ball.y > H) {
             life--
             console.log("lose life", life)
-            enterState(GameState.PLAY)
+            if (life <= 0) {
+                console.error('you lose', life)
+                enterState(GameState.LOSE)
+            } else {
+                enterState(GameState.PLAY)
+            }
             return
         }
   

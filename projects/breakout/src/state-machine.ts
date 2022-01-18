@@ -1,11 +1,13 @@
 import { State } from "./state/State";
 import { gameTitle } from "./state/game-title";
 import { play } from "./state/play";
+import { lose } from "./state/lose";
 
 export enum GameState {
     TITLE,
     PLAY,
-    HIGHSCORE
+    HIGHSCORE,
+    LOSE,
 }
 
 let currentState: State
@@ -23,6 +25,10 @@ export function enterState(newState: GameState): State {
         case GameState.PLAY:
         currentState = play
         break
+
+        case GameState.LOSE:
+            currentState = lose
+            break
 
         default:
             throw 'unknown state'
