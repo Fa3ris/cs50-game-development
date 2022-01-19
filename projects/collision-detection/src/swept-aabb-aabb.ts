@@ -28,8 +28,8 @@ export function sweptAABB_AABB() {
     let collisionInfo: SweptAABB_AABBCollision | undefined;
 
     const diagonalMotion = linearMotion(
-      new Vector2D(0, 35),
-      new Vector2D(35, 65)
+      new Vector2D(10, 45),
+      new Vector2D(35, 95)
     );
   
   
@@ -73,7 +73,7 @@ export function sweptAABB_AABB() {
         drawRay(normalRay, "white")
 
         ctx.setLineDash([1, 1]);
-        drawAABB(futurePosition, "maroon")
+        drawAABB(futurePosition, "white")
         ctx.setLineDash([]);
       if (collisionInfo) {
         drawAABB(staticAABB, "red");
