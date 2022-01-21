@@ -178,7 +178,7 @@ export const play: State = {
 
         if (score == winScore) {
             console.log("You Win")
-            enterState(GameState.WIN)
+            enterState(GameState.LEVEL_COMPLETE)
             return
         }
 

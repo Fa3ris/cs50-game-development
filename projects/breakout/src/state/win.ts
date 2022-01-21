@@ -1,8 +1,7 @@
 import { Vector2D } from "~common/geometry";
 import { ctx, H, keys, W } from "../main";
-import { enterState, GameState } from "../state-machine";
+import { enterState, GameState, getTotalScore } from "../state-machine";
 import { easeInVector, easeOutVector, linearVector, VectorTween } from "../tween";
-import { getScore } from "./play";
 import { State } from "./State";
 
 let score: number
@@ -39,7 +38,7 @@ const cleanInstructionTween = () => {
 
 export const win: State = {
     enter: function (): void {
-        score = getScore();
+        score = getTotalScore();
         console.log('enter win');
         const start = new Vector2D(0, -60);
         instructionPosition = scorePosition = textPosition = start

@@ -1,7 +1,7 @@
 import { AABB } from "~common/geometry";
 import { generateBrickRow, generateLevel } from "../brick-generator";
 import { ctx, H, keys, W } from "../main";
-import { enterState, GameState } from "../state-machine";
+import { enterState, GameState, startPlay } from "../state-machine";
 import { elementsTileH, elementsTileW, PaddleColor, PaddleSize } from "../tile-renderer";
 import { Paddle, resetScore, setBricks, resetLife, setPaddle, setWinScore } from "./play";
 import { State } from "./State";
@@ -68,15 +68,7 @@ export const gameTitle: State = {
             keys["Enter"] = true
 
             if (titleSelectHighlightedIndex == 0) {
-                setPaddle(generatePaddle(PaddleSize.MEDIUM, PaddleColor.BLUE))
-               
-                const {bricks, winScore} = generateLevel(1)
-
-                setWinScore(winScore)
-                setBricks(bricks)
-                resetLife()
-                resetScore()
-                enterState(GameState.PLAY)
+                startPlay()
             } else {
                 console.log('title -> high score')
 
@@ -87,21 +79,4 @@ export const gameTitle: State = {
     exit: function (): void {
         console.debug("exit title")
     }
-}
-
-
-function generatePaddle(size: PaddleSize, color: PaddleColor): Paddle {
-    const paddleW =  size * elementsTileW
-    const paddleX =  (W - paddleW) / 2
-    const paddleY =  H - 5 - elementsTileH
-    return {
-        size: size,
-        color: color,
-        w: paddleW,
-        h: elementsTileH,
-        x: paddleX,
-        y: paddleY,
-        dx: 0,
-        aabb: new AABB(paddleX, paddleY, paddleW, elementsTileH)
-    };
 }
