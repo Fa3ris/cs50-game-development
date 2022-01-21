@@ -563,32 +563,6 @@ export const play: State = {
 }
 
 
-export function generateBrickRow(n: number, y: number, columnGap: number): BrickInfo[] {
-    const res: BrickInfo[] = [];
-    const totalW =  (n * elementsTileW) + ((n - 1) * columnGap);
-
-    let x = (W - totalW) / 2
-
-    for (let index = 0; index < n; index++) {
-
-        res.push({
-            x,
-            y,
-            index: 0,
-            life: 1,
-            aabb: new AABB(x, y, elementsTileW, elementsTileH)
-        })
-
-        x += elementsTileW
-
-        if (index < (n - 1)) {
-            x += columnGap
-        }
-        
-    }
-    return res
-}
-
 
 function distanceSquared(x1: number, y1: number, x2: number, y2: number): number {
     return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)
