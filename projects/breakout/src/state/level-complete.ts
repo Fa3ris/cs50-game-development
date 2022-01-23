@@ -7,6 +7,8 @@ let elapsed = 0
 let text: string
 let textX: number
 let textY: number
+
+const waitTime = .01
 export const levelComplete: State = {
     enter: function (): void {
         console.log('enter level complete')
@@ -21,7 +23,7 @@ export const levelComplete: State = {
     },
     update: function (dt: number): void {
         elapsed += dt
-        if (elapsed > 2) {
+        if (elapsed > waitTime) {
             levelCompletedCallback()
         }
     },

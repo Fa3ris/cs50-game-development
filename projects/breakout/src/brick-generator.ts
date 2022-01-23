@@ -34,6 +34,8 @@ export function generateLevel(n: number): {
      bricks: BrickInfo[][],
      winScore: number } {
 
+    console.log('generate level', n)
+
     const bricks = []
     const rowGap = 6
 
@@ -50,13 +52,19 @@ export function generateLevel(n: number): {
     }
     bricks.push(firstRow)
     const secondRow = generateBrickRow(0, 100 + elementsTileH + rowGap, 4)
+
+    for (let index = 1; index < secondRow.length; index = index + 2) {
+        secondRow[index].index = 2;
+        secondRow[index].life = 3;
+    }
     
     for (const brick of secondRow) {
         winScore += brick.life
     }
     bricks.push(secondRow)
+
     const thirdRow = generateBrickRow(1, 100 + 2.25*elementsTileH + rowGap, 0)
-    for (let index = 0; index < 0; index = index + 2) {
+    for (let index = 0; index < thirdRow.length - 1; index = index + 2) {
         thirdRow[index].index = 1;
         thirdRow[index].life = 2;
     }

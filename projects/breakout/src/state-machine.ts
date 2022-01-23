@@ -92,10 +92,11 @@ export function startPlay() {
     enterState(GameState.PLAY)
 }
 
+const maxLevel = 1;
 export function levelComplete() {
     level++
     totalScore += getScore()
-    if (level == 2) {
+    if (level >= maxLevel) {
         enterState(GameState.WIN)
         level = 0
         totalScore = 0
