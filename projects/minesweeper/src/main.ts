@@ -1,4 +1,5 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
+import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 
 /* CANVAS */
@@ -20,11 +21,31 @@ let redraw = true
 
 const cellDim = Math.max(gridW / nCols, gridH / nRows)
 
+const gridFinalW = nCols * cellDim
+
+const gridFinalH = nRows * cellDim
+
 const keys: { [index: string]: boolean } = {};
 
 const ctx = getRenderingContext();
 
 document.querySelector("#root")?.appendChild(ctx.canvas);
+
+let cursorPosition: Vector2D = new Vector2D(0, 0)
+
+let countCursor = 0
+
+ctx.canvas.addEventListener('mousemove', (e) => {
+
+  /* many events are fired between a redraw */
+  countCursor++
+  console.log('move', countCursor)
+
+  cursorPosition.x = e.offsetX
+  cursorPosition.y = e.offsetY
+
+  redraw = true
+})
 
 main();
 
@@ -66,7 +87,6 @@ async function main() {
 
 
 
-
 function draw() {
 
   if (!redraw) { return }
@@ -75,10 +95,14 @@ function draw() {
 
   ctx.clearRect(0, 0, W, H);
 
+  
+
   ctx.save()
   
   ctx.fillStyle = 'grey'
   ctx.fillRect(0, 0, W, H)
+
+  /* DRAW CANVAS GRADUATION POINTS */
 
   ctx.fillStyle = 'black'
 
@@ -90,7 +114,7 @@ function draw() {
 
 
 
-  let end = gridX0 + nCols * cellDim
+  let end = gridX0 + gridFinalW
   graduation = `(${end}, 0)`
   ctx.fillText(graduation, end - ctx.measureText(graduation).width / 2, 2)
 
@@ -99,7 +123,7 @@ function draw() {
   graduation = `(0, ${gridY0})`
   ctx.fillText(graduation, 0, gridY0)
 
-  end = gridY0 + nRows * cellDim
+  end = gridY0 + gridFinalH
   graduation = `(0, ${end})`
 
   ctx.fillText(graduation, 0, end)
@@ -154,12 +178,31 @@ function draw() {
   }
   ctx.restore()
 
+
+  ctx.beginPath()
+  ctx.arc(cursorPosition.x, cursorPosition.y, 2, 0, Math.PI * 2)
+  ctx.fill()
+
+  if (insideGrid) {
+    ctx.save()
+
+    ctx.globalAlpha = 0.1
+    ctx.fillStyle = 'red'
+
+    ctx.fillRect(gridX0, gridY0, gridFinalW, gridFinalH)
+    ctx.restore()
+  }
+
   redraw = false
+  console.log('reset count cursor')
+  countCursor = 0
 }
+
+let insideGrid: boolean
 
 function update() {
 
-
+  insideGrid = pointIsInQuad(cursorPosition.x, cursorPosition.y, gridX0, gridY0, gridFinalW, gridFinalH)
 
 }
 
@@ -177,4 +220,17 @@ function getRenderingContext(): CanvasRenderingContext2D {
   adjustCanvasForDisplay(ctx, W, H);
 
   return ctx;
+}
+
+
+
+function pointIsInQuad(x1: number, y1: number, x2: number, y2: number, w2: number, h2: number): boolean {
+
+  const left = x2;
+  const right = x2 + w2;
+
+  const top = y2;
+  const bottom = y2 + h2;
+
+  return (x1 >= left && x1 <= right && y1 >= top && y1 <= bottom)
 }
