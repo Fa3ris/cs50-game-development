@@ -93,8 +93,8 @@ main();
 
 async function main() {
 
-  const halfCol = Math.floor(nCols / 2) // 10
-  const halfRow = Math.floor(nRows / 2) // 5
+  const halfCol = Math.floor(nCols / 2)
+  const halfRow = Math.floor(nRows / 2)
 
   grid = {
     x: gridX0,
@@ -277,6 +277,11 @@ function draw() {
       ctx.fillRect(bottomRight.x, bottomRight.y, bottomRight.w, bottomRight.h)
 
     }
+
+    if (pointedCell) {
+      ctx.fillStyle= 'white'
+      ctx.fillRect(pointedCell.x, pointedCell.y, cellDim, cellDim)
+    }
   
 
     ctx.restore()
@@ -293,36 +298,50 @@ let insideTopRight: boolean
 let insideBottomLeft: boolean
 let insideBottomRight: boolean
 
+let pointedCell: Cell | undefined
+
 function update() {
+
+  pointedCell = undefined
+
+  insideGrid = insideTopLeft = insideTopRight = insideBottomLeft = insideBottomRight = false
 
   insideGrid = pointIsInQuad(cursorPosition.x, cursorPosition.y, gridX0, gridY0, gridFinalW, gridFinalH)
 
-
+  if (!insideGrid) { return }
 
   insideTopLeft = isinQuad(cursorPosition, topLeft)
-
   insideTopRight = isinQuad(cursorPosition, topRight)
   insideBottomLeft = isinQuad(cursorPosition, bottomLeft)
   insideBottomRight = isinQuad(cursorPosition, bottomRight)
 
+
   if (insideTopLeft) {
     console.log('%cinside top left', "color:green", insideTopLeft)
+    pointedCell = cellInQuad(cursorPosition, topLeft)
   }
 
   if (insideTopRight) {
     console.log('%cinside top right', "color:blue", insideTopRight)
+    pointedCell = cellInQuad(cursorPosition, topRight)
   }
   
   
   if (insideBottomLeft) {
     console.log('%cinside bottom left', "color:yellow", insideBottomLeft)
+    pointedCell = cellInQuad(cursorPosition, bottomLeft)
   }
   
 
   if (insideBottomRight) {
     console.log('%cinside bottom right', "color:orange", insideBottomRight)
+    pointedCell = cellInQuad(cursorPosition, bottomRight)
   }
 
+  if (pointedCell) {
+
+    console.log('pointed cell', pointedCell)
+  }
 
 }
 
@@ -353,4 +372,29 @@ function pointIsInQuad(x1: number, y1: number, x2: number, y2: number, w2: numbe
   const bottom = y2 + h2;
 
   return (x1 > left && x1 < right && y1 > top && y1 < bottom) // check if really inside and not on edge
+}
+
+function gridIndex(row: number, col: number, gridWidth: number): number {
+  return gridWidth * row + col
+}
+
+
+function cellInQuad(point: Vector2D, quad: Quad): Cell | undefined {
+  const maxX =  quad.x + quad.w
+  const maxY =  quad.y + quad.h
+  for (let x = quad.x; x < maxX; x += cellDim) {
+    for (let y = quad.y; y < maxY; y += cellDim) {
+      const insideCell = pointIsInQuad(point.x, point.y, x, y, cellDim, cellDim)
+
+      if (insideCell) {
+        return {x, y}
+      }
+    }
+  }
+}
+
+
+type Cell = {
+  x: number,
+  y: number
 }
