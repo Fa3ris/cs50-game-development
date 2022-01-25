@@ -84,7 +84,9 @@ type Quad = {
   x: number,
   y: number,
   w: number,
-  h: number
+  h: number,
+  baseCol: number,
+  baseRow: number
 }
 
 let grid: Quad
@@ -100,35 +102,45 @@ async function main() {
     x: gridX0,
     y: gridY0,
     w: gridFinalW,
-    h: gridFinalH
+    h: gridFinalH,
+    baseCol: 0,
+    baseRow: 0
   }
 
   topLeft = {
     x: gridX0,
     y: gridY0,
     w: (halfCol) * cellDim,
-    h: (halfRow) * cellDim
+    h: (halfRow) * cellDim,
+    baseCol: 0,
+    baseRow: 0
   }
 
   topRight = {
     x: gridX0 + halfCol * cellDim,
     y: gridY0,
     w: (nCols- halfCol) * cellDim,
-    h: halfRow * cellDim
+    h: halfRow * cellDim,
+    baseCol: halfCol,
+    baseRow: 0
   }
 
   bottomLeft = {
     x: gridX0,
     y: gridY0 + halfRow *cellDim,
     w: (halfCol) * cellDim,
-    h: (nRows - halfRow) * cellDim
+    h: (nRows - halfRow) * cellDim,
+    baseCol: 0,
+    baseRow: halfRow
   }
 
   bottomRight = {
     x: gridX0 + halfCol * cellDim,
     y: gridY0 + halfRow *cellDim,
     w: (nCols- halfCol) * cellDim,
-    h: (nRows - halfRow) * cellDim
+    h: (nRows - halfRow) * cellDim,
+    baseCol: halfCol,
+    baseRow: halfRow
   }
 
 
@@ -382,19 +394,24 @@ function gridIndex(row: number, col: number, gridWidth: number): number {
 function cellInQuad(point: Vector2D, quad: Quad): Cell | undefined {
   const maxX =  quad.x + quad.w
   const maxY =  quad.y + quad.h
-  for (let x = quad.x; x < maxX; x += cellDim) {
-    for (let y = quad.y; y < maxY; y += cellDim) {
+  let row = quad.baseRow, col = quad.baseCol
+  for (let x = quad.x; x < maxX; x += cellDim, col++) {
+
+    for (let y = quad.y; y < maxY; y += cellDim, row++) {
       const insideCell = pointIsInQuad(point.x, point.y, x, y, cellDim, cellDim)
 
       if (insideCell) {
-        return {x, y}
+        return {x, y, row, col}
       }
     }
+    row = quad.baseRow
   }
 }
 
 
 type Cell = {
   x: number,
-  y: number
+  y: number,
+  row: number,
+  col: number,
 }
