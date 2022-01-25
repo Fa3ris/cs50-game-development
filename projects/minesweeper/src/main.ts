@@ -47,7 +47,7 @@ ctx.canvas.addEventListener('mousemove', (e) => {
   redraw = true
 })
 
-main();
+
 
 document.addEventListener("keydown", function (e) {
   if (e.key === "Alt") {
@@ -77,15 +77,75 @@ window.addEventListener("keydown", function (e) {
   }
 });
 
+let insideGrid: boolean
+
+let topLeft: Quad, topRight: Quad, bottomLeft: Quad, bottomRight: Quad
+type Quad = {
+  x: number,
+  y: number,
+  w: number,
+  h: number
+}
+
+let grid: Quad
+
+main();
+
 async function main() {
+
+  const halfCol = Math.floor(nCols / 2) // 10
+  const halfRow = Math.floor(nRows / 2) // 5
+
+  grid = {
+    x: gridX0,
+    y: gridY0,
+    w: gridFinalW,
+    h: gridFinalH
+  }
+
+  topLeft = {
+    x: gridX0,
+    y: gridY0,
+    w: (halfCol) * cellDim,
+    h: (halfRow) * cellDim
+  }
+
+  topRight = {
+    x: gridX0 + halfCol * cellDim,
+    y: gridY0,
+    w: (nCols- halfCol) * cellDim,
+    h: halfRow * cellDim
+  }
+
+  bottomLeft = {
+    x: gridX0,
+    y: gridY0 + halfRow *cellDim,
+    w: (halfCol) * cellDim,
+    h: (nRows - halfRow) * cellDim
+  }
+
+  bottomRight = {
+    x: gridX0 + halfCol * cellDim,
+    y: gridY0 + halfRow *cellDim,
+    w: (nCols- halfCol) * cellDim,
+    h: (nRows - halfRow) * cellDim
+  }
+
+
   setDraw(draw);
   setUpdate(update);
   setProcessInput(processInput);
 
+  
   start();
 }
 
 
+
+function isinQuad(point:Vector2D, quad: Quad): boolean {
+
+  return pointIsInQuad(point.x, point.y, quad.x, quad.y, quad.w, quad.h)
+}
 
 function draw() {
 
@@ -190,6 +250,41 @@ function draw() {
     ctx.fillStyle = 'red'
 
     ctx.fillRect(gridX0, gridY0, gridFinalW, gridFinalH)
+
+
+    ctx.globalAlpha = 0.5
+
+
+    ctx.fillStyle= 'green'
+
+    let halfCol = Math.floor(nCols / 2) // 10
+    let halfRow = Math.floor(nRows / 2) // 5
+  
+    if (insideTopLeft) {
+
+      ctx.fillStyle= 'green'
+      ctx.fillRect(topLeft.x, topLeft.y, topLeft.w, topLeft.h)
+    }
+    
+    if (insideTopRight) {
+      ctx.fillStyle= 'blue'
+      ctx.fillRect(topRight.x, topRight.y, topRight.w, topRight.h)
+
+    }
+
+    if (insideBottomLeft) {
+      ctx.fillStyle= 'yellow'
+      ctx.fillRect(bottomLeft.x, bottomLeft.y, bottomLeft.w, bottomLeft.h)
+
+    }
+
+    if (insideBottomRight) {
+      ctx.fillStyle= 'orange'
+      ctx.fillRect(bottomRight.x, bottomRight.y, bottomRight.w, bottomRight.h)
+
+    }
+  
+
     ctx.restore()
   }
 
@@ -198,11 +293,43 @@ function draw() {
   countCursor = 0
 }
 
-let insideGrid: boolean
+
+let insideTopLeft: boolean
+let insideTopRight: boolean
+let insideBottomLeft: boolean
+let insideBottomRight: boolean
 
 function update() {
 
   insideGrid = pointIsInQuad(cursorPosition.x, cursorPosition.y, gridX0, gridY0, gridFinalW, gridFinalH)
+
+
+
+  insideTopLeft = isinQuad(cursorPosition, topLeft)
+
+  insideTopRight = isinQuad(cursorPosition, topRight)
+  insideBottomLeft = isinQuad(cursorPosition, bottomLeft)
+  insideBottomRight = isinQuad(cursorPosition, bottomRight)
+
+  if (insideTopLeft) {
+
+    console.log('%cinside top left', "color:green", insideTopLeft)
+  }
+
+  if (insideTopRight) {
+    console.log('%cinside top right', "color:blue", insideTopRight)
+  }
+  
+  
+  if (insideBottomLeft) {
+    console.log('%cinside bottom left', "color:yellow", insideBottomLeft)
+  }
+  
+
+  if (insideBottomRight) {
+    console.log('%cinside bottom right', "color:orange", insideBottomRight)
+  }
+
 
 }
 
