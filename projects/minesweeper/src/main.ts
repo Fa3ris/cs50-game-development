@@ -254,12 +254,6 @@ function draw() {
 
     ctx.globalAlpha = 0.5
 
-
-    ctx.fillStyle= 'green'
-
-    let halfCol = Math.floor(nCols / 2) // 10
-    let halfRow = Math.floor(nRows / 2) // 5
-  
     if (insideTopLeft) {
 
       ctx.fillStyle= 'green'
@@ -312,7 +306,6 @@ function update() {
   insideBottomRight = isinQuad(cursorPosition, bottomRight)
 
   if (insideTopLeft) {
-
     console.log('%cinside top left', "color:green", insideTopLeft)
   }
 
@@ -359,5 +352,5 @@ function pointIsInQuad(x1: number, y1: number, x2: number, y2: number, w2: numbe
   const top = y2;
   const bottom = y2 + h2;
 
-  return (x1 >= left && x1 <= right && y1 >= top && y1 <= bottom)
+  return (x1 > left && x1 < right && y1 > top && y1 < bottom) // check if really inside and not on edge
 }
