@@ -1,6 +1,7 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
+import { clickCell, initGrid } from "./grid";
 
 /* CANVAS */
 const W = 432;
@@ -39,12 +40,32 @@ ctx.canvas.addEventListener('mousemove', (e) => {
 
   /* many events are fired between a redraw */
   countCursor++
-  console.log('move', countCursor)
+  console.debug('move', countCursor)
 
   cursorPosition.x = e.offsetX
   cursorPosition.y = e.offsetY
 
   redraw = true
+})
+
+let clicked = false
+
+ctx.canvas.addEventListener('click', (e) => {
+
+  if (clicked) {
+    console.log('wait to resolve click')
+    return
+  }
+
+  console.log('clicked')
+
+  cursorPosition.x = e.offsetX
+  cursorPosition.y = e.offsetY
+
+  clicked = true
+
+  redraw = true
+
 })
 
 
@@ -97,6 +118,8 @@ async function main() {
 
   const halfCol = Math.floor(nCols / 2)
   const halfRow = Math.floor(nRows / 2)
+
+  initGrid(nRows, nCols)
 
   grid = {
     x: gridX0,
@@ -163,7 +186,7 @@ function draw() {
 
   if (!redraw) { return }
   
-  console.log('redraw')
+  console.debug('redraw')
 
   ctx.clearRect(0, 0, W, H);
 
@@ -299,8 +322,16 @@ function draw() {
     ctx.restore()
   }
 
+  ctx.save()
+  ctx.fillStyle = "black"
+  for (const discoveredCell of discoveredCells) {
+    
+    ctx.fillRect(discoveredCell.x, discoveredCell.y, cellDim, cellDim)
+  }
+  ctx.restore()
+
   redraw = false
-  console.log('reset count cursor')
+  console.debug('reset count cursor')
   countCursor = 0
 }
 
@@ -318,7 +349,7 @@ function update() {
 
   insideGrid = insideTopLeft = insideTopRight = insideBottomLeft = insideBottomRight = false
 
-  insideGrid = pointIsInQuad(cursorPosition.x, cursorPosition.y, gridX0, gridY0, gridFinalW, gridFinalH)
+  insideGrid = isinQuad(cursorPosition, grid)
 
   if (!insideGrid) { return }
 
@@ -329,33 +360,58 @@ function update() {
 
 
   if (insideTopLeft) {
-    console.log('%cinside top left', "color:green", insideTopLeft)
+    console.debug('%cinside top left', "color:green", insideTopLeft)
     pointedCell = cellInQuad(cursorPosition, topLeft)
   }
 
   if (insideTopRight) {
-    console.log('%cinside top right', "color:blue", insideTopRight)
+    console.debug('%cinside top right', "color:blue", insideTopRight)
     pointedCell = cellInQuad(cursorPosition, topRight)
   }
   
   
   if (insideBottomLeft) {
-    console.log('%cinside bottom left', "color:yellow", insideBottomLeft)
+    console.debug('%cinside bottom left', "color:yellow", insideBottomLeft)
     pointedCell = cellInQuad(cursorPosition, bottomLeft)
   }
   
 
   if (insideBottomRight) {
-    console.log('%cinside bottom right', "color:orange", insideBottomRight)
+    console.debug('%cinside bottom right', "color:orange", insideBottomRight)
     pointedCell = cellInQuad(cursorPosition, bottomRight)
   }
 
   if (pointedCell) {
 
-    console.log('pointed cell', pointedCell)
+    console.debug('pointed cell', pointedCell)
+  }
+
+  if (clicked) {
+
+    console.log('resolve click')
+
+    if (pointedCell) {
+      console.log('pointed cell', pointedCell)
+
+      let cellDiscovered = clickCell(pointedCell.row, pointedCell.col)
+
+      if (cellDiscovered) {
+
+        discoveredCells.push({
+          x: pointedCell.x,
+          y: pointedCell.y
+        })
+
+      }
+    }
+    console.log('discovered cells', discoveredCells.length)
+
+    clicked = false
   }
 
 }
+
+const discoveredCells: {x: number, y: number}[] = []
 
 function processInput() {}
 
@@ -386,9 +442,7 @@ function pointIsInQuad(x1: number, y1: number, x2: number, y2: number, w2: numbe
   return (x1 > left && x1 < right && y1 > top && y1 < bottom) // check if really inside and not on edge
 }
 
-function gridIndex(row: number, col: number, gridWidth: number): number {
-  return gridWidth * row + col
-}
+
 
 
 function cellInQuad(point: Vector2D, quad: Quad): Cell | undefined {
