@@ -3,6 +3,8 @@ import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { CellState, clickCell, getCellState, initGrid } from "./grid";
 
+const DEBUG = true
+
 /* CANVAS */
 const W = 432;
 const H = 243;
@@ -53,11 +55,11 @@ let clicked = false
 ctx.canvas.addEventListener('click', (e) => {
 
   if (clicked) {
-    console.debug('wait to resolve click')
+    DEBUG && console.debug('wait to resolve click')
     return
   }
 
-  console.debug('clicked')
+  DEBUG && console.debug('clicked')
 
   cursorPosition.x = e.offsetX
   cursorPosition.y = e.offsetY
@@ -73,7 +75,7 @@ ctx.canvas.addEventListener('click', (e) => {
 document.addEventListener("keydown", function (e) {
   if (e.key === "Alt") {
     // seems that no keyup is fired for alt key
-    console.log("ignore alt");
+    DEBUG && console.log("ignore alt");
     return;
   }
 
@@ -88,12 +90,12 @@ document.addEventListener("keyup", function (e) {
 
 window.addEventListener("keydown", function (e) {
   if (e.key === " " && e.target == document.body) {
-    console.log("prevent scrolling");
+    DEBUG && console.log("prevent scrolling");
     e.preventDefault();
   }
 
   if (e.key === "ArrowDown" && e.target == document.body) {
-    console.log("prevent scrolling");
+    DEBUG && console.log("prevent scrolling");
     e.preventDefault();
   }
 });
@@ -326,7 +328,7 @@ function draw() {
 
   drawCells()
 
-  drawCellsDebug()
+  DEBUG && drawCellsDebug()
  
 
   redraw = false
@@ -380,7 +382,7 @@ function drawCellsDebug() {
   for (let x = grid.x; x < maxX; x += cellDim, col++) {
 
     for (let y = grid.y; y < maxY; y += cellDim, row++) {
-      const state = getCellState(row, col)
+      const state = getCellState(row, col, DEBUG)
 
     if (state == CellState.HIDDEN) { continue }
 
@@ -462,53 +464,56 @@ function update() {
 
 
   if (insideTopLeft) {
-    console.debug('%cinside top left', "color:green", insideTopLeft)
+    DEBUG && console.debug('%cinside top left', "color:green", insideTopLeft)
     pointedCell = cellInQuad(cursorPosition, topLeft)
   }
 
   if (insideTopRight) {
-    console.debug('%cinside top right', "color:blue", insideTopRight)
+    DEBUG && console.debug('%cinside top right', "color:blue", insideTopRight)
     pointedCell = cellInQuad(cursorPosition, topRight)
   }
   
   
   if (insideBottomLeft) {
-    console.debug('%cinside bottom left', "color:yellow", insideBottomLeft)
+    DEBUG && console.debug('%cinside bottom left', "color:yellow", insideBottomLeft)
     pointedCell = cellInQuad(cursorPosition, bottomLeft)
   }
   
 
   if (insideBottomRight) {
-    console.debug('%cinside bottom right', "color:orange", insideBottomRight)
+    DEBUG && console.debug('%cinside bottom right', "color:orange", insideBottomRight)
     pointedCell = cellInQuad(cursorPosition, bottomRight)
   }
 
   if (pointedCell) {
 
-    console.debug('pointed cell', pointedCell)
+    DEBUG && console.debug('pointed cell', pointedCell)
   }
 
   if (clicked) {
 
-    console.debug('resolve click')
+    DEBUG && console.debug('resolve click')
 
     if (pointedCell) {
-      console.log('pointed cell', pointedCell)
+      DEBUG && console.log('pointed cell', pointedCell)
 
-      let cellDiscovered = clickCell(pointedCell.row, pointedCell.col)
+      let cellsRevealed = clickCell(pointedCell.row, pointedCell.col)
 
-      if (cellDiscovered) {
+      DEBUG && console.group('discovered cells')
+      for (let cellRevealed of cellsRevealed) {
 
-        discoveredCells.push({
-          x: pointedCell.x,
-          y: pointedCell.y,
-          row: pointedCell.row,
-          col: pointedCell.col
-        })
-
+        const discoveredCell = {
+          row: cellRevealed.row,
+          col: cellRevealed.col,
+          x: gridX0 + cellRevealed.col * cellDim,
+          y: gridY0 + cellRevealed.row * cellDim,
+        }
+        DEBUG && console.log(discoveredCell)
+        discoveredCells.push(discoveredCell)
       }
+      DEBUG && console.groupEnd()
     }
-    console.log('discovered cells', discoveredCells.length)
+    DEBUG && console.log('discovered cells', discoveredCells.length)
 
     clicked = false
   }
