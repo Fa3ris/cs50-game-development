@@ -1,7 +1,7 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
-import { clickCell, initGrid } from "./grid";
+import { CellState, clickCell, getCellState, initGrid } from "./grid";
 
 /* CANVAS */
 const W = 432;
@@ -53,11 +53,11 @@ let clicked = false
 ctx.canvas.addEventListener('click', (e) => {
 
   if (clicked) {
-    console.log('wait to resolve click')
+    console.debug('wait to resolve click')
     return
   }
 
-  console.log('clicked')
+  console.debug('clicked')
 
   cursorPosition.x = e.offsetX
   cursorPosition.y = e.offsetY
@@ -322,19 +322,121 @@ function draw() {
     ctx.restore()
   }
 
-  ctx.save()
-  ctx.fillStyle = "black"
-  for (const discoveredCell of discoveredCells) {
-    
-    ctx.fillRect(discoveredCell.x, discoveredCell.y, cellDim, cellDim)
-  }
-  ctx.restore()
+ 
+
+  drawCells()
+
+  drawCellsDebug()
+ 
 
   redraw = false
   console.debug('reset count cursor')
   countCursor = 0
 }
 
+
+function drawCells() {
+  ctx.save()
+  ctx.fillStyle = "black"
+
+  const fontSize = cellDim / 2;
+  ctx.font = `${fontSize}px sans-serif`
+  const yShift = fontSize * .5 + 1
+
+  const halfCell = cellDim * .5
+  ctx.textBaseline = 'top'
+  ctx.textAlign = 'center'
+
+  for (const discoveredCell of discoveredCells) {
+
+    const state = getCellState(discoveredCell.row, discoveredCell.col)
+
+    if (state == CellState.HIDDEN) { continue }
+
+    let content: string = cellContent(state)
+
+    
+    ctx.fillText(content, discoveredCell.x + halfCell, discoveredCell.y + yShift)
+  }
+  ctx.restore()
+}
+
+function drawCellsDebug() {
+
+  ctx.save()
+  ctx.globalAlpha = .5
+  ctx.textBaseline = 'top'
+  ctx.textAlign = 'center'
+
+  const fontSize = cellDim / 2;
+  ctx.font = `${fontSize}px sans-serif`
+  const yShift = fontSize * .5 + 1
+  const maxX =  grid.x + grid.w
+  const maxY =  grid.y + grid.h
+
+  const halfCell = cellDim * .5
+
+  let row = grid.baseRow, col = grid.baseCol
+  for (let x = grid.x; x < maxX; x += cellDim, col++) {
+
+    for (let y = grid.y; y < maxY; y += cellDim, row++) {
+      const state = getCellState(row, col)
+
+    if (state == CellState.HIDDEN) { continue }
+
+    let content: string = cellContent(state)
+
+    
+    ctx.fillText(content, x + halfCell, y + yShift)
+    }
+    row = grid.baseRow
+  }
+
+  ctx.restore()
+
+}
+
+
+function cellContent(state: CellState): string {
+  let content: string;
+
+    switch (state) {
+      case CellState.ONE:
+        content = "1";
+        break;
+      case CellState.TWO:
+        content = "2";
+        break;
+      case CellState.THREE:
+        content = "3";
+        break;
+      case CellState.FOUR:
+        content = "4";
+        break;
+      case CellState.FIVE:
+        content = "5";
+        break;
+      case CellState.SIX:
+        content = "6";
+        break;
+      case CellState.SEVEN:
+        content = "7";
+        break;
+      case CellState.EIGHT:
+        content = "8";
+        break;
+      case CellState.MINE:
+        content = "X";
+        break;
+      case CellState.EMPTY:
+        content = "---";
+        break
+      default:
+      throw 'invalid state'
+    }
+
+    return content
+}
 
 let insideTopLeft: boolean
 let insideTopRight: boolean
@@ -388,7 +490,7 @@ function update() {
 
   if (clicked) {
 
-    console.log('resolve click')
+    console.debug('resolve click')
 
     if (pointedCell) {
       console.log('pointed cell', pointedCell)
@@ -399,7 +501,9 @@ function update() {
 
         discoveredCells.push({
           x: pointedCell.x,
-          y: pointedCell.y
+          y: pointedCell.y,
+          row: pointedCell.row,
+          col: pointedCell.col
         })
 
       }
@@ -411,7 +515,7 @@ function update() {
 
 }
 
-const discoveredCells: {x: number, y: number}[] = []
+const discoveredCells: Cell[] = []
 
 function processInput() {}
 
