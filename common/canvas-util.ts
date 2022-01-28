@@ -7,7 +7,7 @@ export function adjustCanvasForDisplay(
   H: number
 ) {
   const pixelRatio = window.devicePixelRatio;
-  console.log('pixel ratio', pixelRatio)
+  console.debug('pixel ratio', pixelRatio)
   const canvas = ctx.canvas;
   // set canvas internal dimensions to be <ratio> times larger
   canvas.width = W * pixelRatio;

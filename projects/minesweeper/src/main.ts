@@ -4,6 +4,7 @@ import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { CellState, clickCell, getCellState, initGrid } from "./grid";
 
 const DEBUG = true
+const VERBOSE = false
 
 /* CANVAS */
 const W = 432;
@@ -508,7 +509,7 @@ function update() {
           x: gridX0 + cellRevealed.col * cellDim,
           y: gridY0 + cellRevealed.row * cellDim,
         }
-        DEBUG && console.log(discoveredCell)
+        DEBUG && VERBOSE && console.log(discoveredCell)
         discoveredCells.push(discoveredCell)
       }
       DEBUG && console.groupEnd()
