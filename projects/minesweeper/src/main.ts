@@ -3,7 +3,7 @@ import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, safeCellTotal } from "./grid";
 
-const DEBUG = true
+const DEBUG = false
 const VERBOSE = false
 
 const GRID = false
@@ -417,20 +417,24 @@ function drawCells() {
     const content: string = cellContent(state)
 
     if (content) {
-      ctx.globalAlpha = .7
-      ctx.fillStyle = 'lightsteelblue'
+      if (content === 'X') {
+        ctx.fillStyle = 'red'
+      } else {
+        ctx.fillStyle = bgCellColor
+      }
       ctx.fillRect(discoveredCell.x + 1, discoveredCell.y + 1, cellDim - 2, cellDim - 2)
-      ctx.globalAlpha = 1
       ctx.fillStyle = 'black';
       ctx.fillText(content, discoveredCell.x + halfCell, discoveredCell.y + yShift)
     } else {
-      ctx.fillStyle = 'lightsteelblue'
+      ctx.fillStyle = bgCellColor
       ctx.fillRect(discoveredCell.x + 1, discoveredCell.y + 1, cellDim - 2, cellDim - 2)
     }
     
   }
   ctx.restore()
 }
+
+const bgCellColor = 'lightslategrey'
 
 function drawCellsDebug() {
 
@@ -463,7 +467,7 @@ function drawCellsDebug() {
       ctx.fillText(content, x + halfCell, y + yShift)
     } else {
       ctx.globalAlpha = .2
-      ctx.fillStyle = 'lightsteelblue'
+      ctx.fillStyle = bgCellColor
       ctx.fillRect(x + 1, y + 1, cellDim - 2, cellDim - 2)
     }
     
