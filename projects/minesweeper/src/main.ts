@@ -1,10 +1,12 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
-import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions } from "./grid";
+import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, safeCellTotal } from "./grid";
 
 const DEBUG = true
 const VERBOSE = false
+
+
 
 
 enum GameState {
@@ -15,6 +17,7 @@ enum GameState {
 
 let gameState: GameState = GameState.PLAY
 
+let minesToFind: number
 
 /* CANVAS */
 const W = 432;
@@ -134,6 +137,10 @@ async function main() {
 
   initGrid(nRows, nCols)
 
+  minesToFind = minePositions.length
+
+  console.log('need to find', minesToFind, 'mines')
+
   grid = {
     x: gridX0,
     y: gridY0,
@@ -238,6 +245,20 @@ function draw() {
 
   
   ctx.fillText(`cell dim : ${cellDim}`, W - ctx.measureText(`cell dim : ${cellDim}`).width - 10, H - 10)
+
+  ctx.fillText(`discovered: ${discoveredCells.length}`, 5, H - 20)
+  ctx.fillText(`safe cell total: ${safeCellTotal}`, 5, H - 5)
+
+
+  if (gameState == GameState.LOSE) {
+  ctx.fillText(`you LOSE :(`,  (W - ctx.measureText(`you LOSE :(`).width) / 2, H - 50)
+  
+}
+
+if (gameState == GameState.WIN) {
+  
+    ctx.fillText(`you WIN :)`,  (W - ctx.measureText(`you WIN :)`).width) / 2, H - 50)
+  }
 
   ctx.restore()
 
@@ -547,6 +568,11 @@ function update() {
         discoveredCells.push(discoveredCell)
       }
       DEBUG && console.groupEnd()
+    }
+
+    if (discoveredCells.length == safeCellTotal) {
+      console.log('win')
+      gameState = GameState.WIN
     }
     DEBUG && console.log('discovered cells', discoveredCells.length)
 

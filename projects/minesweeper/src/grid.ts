@@ -19,11 +19,11 @@ let gridWidth: number
 let _maxRows: number;
 let _maxCols: number
 
-let safeCellTotal: number
+export let safeCellTotal: number
 
 export let minePositions: CellPos[]
 
-export function initGrid(rows: number, cols: number): void {
+export function initGrid(rows: number, cols: number, mineTotal: number = 10): void {
 
     _maxRows = rows - 1
     _maxCols = cols - 1
@@ -43,8 +43,6 @@ export function initGrid(rows: number, cols: number): void {
     }
 
     minePositions = []
-
-    let mineTotal = 45;
 
     safeCellTotal = totalCells - mineTotal
 
