@@ -100,24 +100,22 @@ while (queue.length > 0) {
         continue;
     }
 
-    
-    if (cell.state != CellState.EMPTY) {
-        DEBUG && console.log('cell not empty, do not reveal neighbors -> exit')
-        
-        if (cell.state == CellState.MINE) {
-            (DEBUG || true) && console.log('%clet mine hidden', "color:yellow")
-            cell.hidden = true
-        } else {
-            (DEBUG || true) && console.log('%creveal numbered cell', "color:yellow")
-            cell.hidden = false
-            discoveredRowCol.push({row: firstElement.row, col: firstElement.col})
-
-        }
-        continue;
+    if (cell.state == CellState.MINE) {
+        (DEBUG || true) && console.log('%clet mine hidden', "color:yellow")
+        continue
     }
+
+    /* empty or number cell at this point */
 
     cell.hidden = false
     discoveredRowCol.push({row: firstElement.row, col: firstElement.col})
+    
+    if (cell.state != CellState.EMPTY) {
+        DEBUG && console.log('cell not empty, do not reveal neighbors -> exit');
+        (DEBUG || true) && console.log('%creveal numbered cell', "color:yellow")
+        continue
+    }
+
 
     const {row, col} = firstElement
 
