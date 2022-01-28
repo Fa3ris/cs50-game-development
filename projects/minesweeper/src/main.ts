@@ -6,6 +6,8 @@ import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, s
 const DEBUG = true
 const VERBOSE = false
 
+const GRID = false
+
 enum GameState {
   PLAY,
   LOSE,
@@ -224,8 +226,6 @@ function draw() {
 
   ctx.clearRect(0, 0, W, H);
 
-  
-
   ctx.save()
   
   ctx.fillStyle = 'grey'
@@ -325,12 +325,12 @@ function draw() {
   }
   ctx.restore()
 
-
+  // draw cursor
   ctx.beginPath()
   ctx.arc(cursorPosition.x, cursorPosition.y, 2, 0, Math.PI * 2)
   ctx.fill()
 
-  if (insideGrid) {
+  if (DEBUG && GRID && insideGrid) {
     ctx.save()
 
     ctx.globalAlpha = 0.1
@@ -401,7 +401,7 @@ function drawCells() {
   ctx.fillStyle = "black"
 
   const fontSize = cellDim / 2;
-  ctx.font = `${fontSize}px sans-serif`
+  ctx.font = `bold ${fontSize}px sans-serif`
   const yShift = fontSize * .5 + 1
 
   const halfCell = cellDim * .5
@@ -415,8 +415,19 @@ function drawCells() {
     if (state == CellState.HIDDEN) { continue }
 
     const content: string = cellContent(state)
+
+    if (content) {
+      ctx.globalAlpha = .7
+      ctx.fillStyle = 'lightsteelblue'
+      ctx.fillRect(discoveredCell.x + 1, discoveredCell.y + 1, cellDim - 2, cellDim - 2)
+      ctx.globalAlpha = 1
+      ctx.fillStyle = 'black';
+      ctx.fillText(content, discoveredCell.x + halfCell, discoveredCell.y + yShift)
+    } else {
+      ctx.fillStyle = 'lightsteelblue'
+      ctx.fillRect(discoveredCell.x + 1, discoveredCell.y + 1, cellDim - 2, cellDim - 2)
+    }
     
-    ctx.fillText(content, discoveredCell.x + halfCell, discoveredCell.y + yShift)
   }
   ctx.restore()
 }
@@ -446,8 +457,16 @@ function drawCellsDebug() {
 
     let content: string = cellContent(state)
 
+    if (content) {
+      ctx.globalAlpha = .7
+      ctx.fillStyle = 'black';
+      ctx.fillText(content, x + halfCell, y + yShift)
+    } else {
+      ctx.globalAlpha = .2
+      ctx.fillStyle = 'lightsteelblue'
+      ctx.fillRect(x + 1, y + 1, cellDim - 2, cellDim - 2)
+    }
     
-    ctx.fillText(content, x + halfCell, y + yShift)
     }
     row = grid.baseRow
   }
@@ -489,7 +508,7 @@ function cellContent(state: CellState): string {
         content = "X";
         break;
       case CellState.EMPTY:
-        content = "---";
+        content = "";
         break
       default:
       throw 'invalid state'
