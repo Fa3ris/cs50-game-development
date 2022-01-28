@@ -1,4 +1,5 @@
 const DEBUG = false
+const VERBOSE = true
 
 type Cell = {
     hidden: boolean
@@ -96,12 +97,12 @@ while (queue.length > 0) {
     DEBUG && console.log('cell at', firstElement, 'is', cell)
 
     if (!cell.hidden) {
-        DEBUG && console.log('already processed cell', cell)
+        (DEBUG || VERBOSE) && console.log('already processed cell', cell)
         continue;
     }
 
     if (cell.state == CellState.MINE) {
-        (DEBUG || true) && console.log('%clet mine hidden', "color:yellow")
+        (DEBUG || VERBOSE) && console.log('%clet mine hidden', "color:yellow")
         continue
     }
 
@@ -112,47 +113,31 @@ while (queue.length > 0) {
     
     if (cell.state != CellState.EMPTY) {
         DEBUG && console.log('cell not empty, do not reveal neighbors -> exit');
-        (DEBUG || true) && console.log('%creveal numbered cell', "color:yellow")
+        (DEBUG || VERBOSE) && console.log('%creveal numbered cell', "color:yellow")
         continue
     }
 
 
     const {row, col} = firstElement
 
-    const children = [{
-        row: row - 1, // top left
-        col: col -1
-    },
-    {
-        row: row - 1, // top
-        col: col
-    },
-    {
-        row: row - 1, // top right
-        col: col + 1
-    },
-    {
-        row: row,   // left
-        col: col -1
-    },
-    {
-        row: row,   // right
-        col: col + 1
-    },
-    {
-        row: row + 1, // bottom left
-        col: col - 1
-    },
-    {
-        row: row + 1,  // bottom
-        col: col
-    },
-    {
-        row: row + 1, // bottom right
-        col: col + 1
-    }]
+    /* neighbor cells */
+    const children = []
 
-    DEBUG && console.log('children', children)
+    for (let i of [-1, 0, 1]) {
+        for (let j of [-1, 0, 1]) {
+            if (i == 0 && j == 0) { /* skip current cell */
+                continue
+            }
+            children.push({
+                row: row + j,
+                col: col + i
+            })
+
+        }
+    }
+
+
+    (DEBUG || VERBOSE) && console.log('children', row, col, children)
 
     for (let child of children) {
 
