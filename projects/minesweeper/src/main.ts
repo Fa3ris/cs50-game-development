@@ -3,7 +3,7 @@ import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, safeCellTotal } from "./grid";
 
-const DEBUG = false
+const DEBUG = true
 const VERBOSE = false
 
 const GRID = false
@@ -236,29 +236,36 @@ function draw() {
   ctx.fillStyle = 'black'
 
   ctx.textBaseline = 'top'
-  let graduation = `(${gridX0}, 0)`
-
   ctx.font = '7px courrier'
-  ctx.fillText(graduation, gridX0 - ctx.measureText(graduation).width / 2, 2)
+
+  if (DEBUG) {
+
+    ctx.textBaseline = 'top'
+
+    let graduation = `(${gridX0}, 0)`
+
+    ctx.fillText(graduation, gridX0 - ctx.measureText(graduation).width / 2, 2)
 
 
+    let end = gridX0 + gridFinalW
+    graduation = `(${end}, 0)`
+    ctx.fillText(graduation, end - ctx.measureText(graduation).width / 2, 2)
 
-  let end = gridX0 + gridFinalW
-  graduation = `(${end}, 0)`
-  ctx.fillText(graduation, end - ctx.measureText(graduation).width / 2, 2)
 
+    ctx.textBaseline = 'middle'
+    graduation = `(0, ${gridY0})`
+    ctx.fillText(graduation, 0, gridY0)
+
+    end = gridY0 + gridFinalH
+    graduation = `(0, ${end})`
+
+    ctx.fillText(graduation, 0, end)
+    
+    ctx.fillText(`cell dim : ${cellDim}`, W - ctx.measureText(`cell dim : ${cellDim}`).width - 10, H - 10)
+
+  }
 
   ctx.textBaseline = 'middle'
-  graduation = `(0, ${gridY0})`
-  ctx.fillText(graduation, 0, gridY0)
-
-  end = gridY0 + gridFinalH
-  graduation = `(0, ${end})`
-
-  ctx.fillText(graduation, 0, end)
-
-  
-  ctx.fillText(`cell dim : ${cellDim}`, W - ctx.measureText(`cell dim : ${cellDim}`).width - 10, H - 10)
 
   ctx.fillText(`discovered: ${discoveredCells.length}`, 5, H - 20)
   ctx.fillText(`safe cell total: ${safeCellTotal}`, 5, H - 5)
@@ -293,7 +300,7 @@ function draw() {
     ctx.translate(cellDim, 0);
     ctx.beginPath()
   
-    if (i % 5 == 0) {
+    if (GRID && i % 5 == 0) {
       ctx.fillText(`${i}`, - ctx.measureText(`${i}`).width / 2, 0)
     }
     ctx.moveTo(0, 0);
@@ -316,7 +323,7 @@ function draw() {
     ctx.translate(0, cellDim);
     ctx.beginPath()
   
-    if (i % 5 == 0) {
+    if (GRID && i % 5 == 0) {
       ctx.fillText(`${i}`, -(3 + ctx.measureText(`${i}`).width), 0)
     }
     ctx.moveTo(0, 0);
@@ -326,9 +333,12 @@ function draw() {
   ctx.restore()
 
   // draw cursor
-  ctx.beginPath()
-  ctx.arc(cursorPosition.x, cursorPosition.y, 2, 0, Math.PI * 2)
-  ctx.fill()
+  if (DEBUG) {
+
+    ctx.beginPath()
+    ctx.arc(cursorPosition.x, cursorPosition.y, 2, 0, Math.PI * 2)
+    ctx.fill()
+  }
 
   if (DEBUG && GRID && insideGrid) {
     ctx.save()
@@ -418,11 +428,17 @@ function drawCells() {
 
     if (content) {
       if (content === 'X') {
-        ctx.fillStyle = 'red'
+
+        if (gameState == GameState.WIN) {
+          ctx.fillStyle = 'green'
+        } else {
+          ctx.fillStyle = 'red'
+        }
+        ctx.fillRect(discoveredCell.x + 1, discoveredCell.y + 1, cellDim - 2, cellDim - 2)
       } else {
         ctx.fillStyle = bgCellColor
+        ctx.fillRect(discoveredCell.x + 1, discoveredCell.y + 1, cellDim - 2, cellDim - 2)
       }
-      ctx.fillRect(discoveredCell.x + 1, discoveredCell.y + 1, cellDim - 2, cellDim - 2)
       ctx.fillStyle = 'black';
       ctx.fillText(content, discoveredCell.x + halfCell, discoveredCell.y + yShift)
     } else {
@@ -640,7 +656,19 @@ function update() {
 
     if (discoveredCells.length == safeCellTotal) {
       console.log('win')
+      for (let pos of minePositions ) {
+        const discoveredCell = {
+          row: pos.row,
+          col: pos.col,
+          x: gridX0 + pos.col * cellDim,
+          y: gridY0 + pos.row * cellDim,
+        }
+        DEBUG && VERBOSE && console.log(discoveredCell)
+        discoveredCells.push(discoveredCell)
+      }
+      revealCells = true
       gameState = GameState.WIN
+      return
     }
     DEBUG && console.log('discovered cells', discoveredCells.length)
 
