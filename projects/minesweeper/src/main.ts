@@ -6,9 +6,6 @@ import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, s
 const DEBUG = true
 const VERBOSE = false
 
-
-
-
 enum GameState {
   PLAY,
   LOSE,
@@ -66,14 +63,15 @@ ctx.canvas.addEventListener('mousemove', (e) => {
 
 let clicked = false
 
+let marked = false
 ctx.canvas.addEventListener('click', (e) => {
 
-  if (clicked) {
-    DEBUG && console.debug('wait to resolve click')
+  if (clicked || marked) {
+    DEBUG && console.log('wait to resolve click and mark', clicked, marked)
     return
   }
 
-  DEBUG && console.debug('clicked')
+  DEBUG && console.log('clicked')
 
   cursorPosition.x = e.offsetX
   cursorPosition.y = e.offsetY
@@ -82,6 +80,22 @@ ctx.canvas.addEventListener('click', (e) => {
 
   redraw = true
 
+})
+
+ctx.canvas.addEventListener('contextmenu', (e) => {
+  e.preventDefault()
+
+  if (clicked || marked) {
+    DEBUG && console.log('wait to resolve click and mark', clicked, marked)
+    return
+  }
+
+  cursorPosition.x = e.offsetX
+  cursorPosition.y = e.offsetY
+
+  marked = true
+
+  redraw = true
 })
 
 
@@ -359,6 +373,14 @@ if (gameState == GameState.WIN) {
   drawCells()
 
   DEBUG && drawCellsDebug()
+
+  ctx.save()
+  ctx.fillStyle = 'white'
+  ctx.globalAlpha = .8
+  for (let markedCell of markedCells) {
+    ctx.fillRect(markedCell.x + 1, markedCell.y + 1, cellDim - 2, cellDim - 2)
+  }
+  ctx.restore()
  
 
   redraw = false
@@ -534,6 +556,15 @@ function update() {
     if (pointedCell) {
       DEBUG && console.log('pointed cell', pointedCell)
 
+
+      for (let i = 0; i < markedCells.length; i++) {
+        let alreadyMarked = markedCells[i];
+        if (pointedCell.col == alreadyMarked.col && alreadyMarked.row == pointedCell.row) {
+          console.log('cell is marked do nothing', alreadyMarked)
+          return
+        }
+      }
+
       let cellsRevealed: CellPos[]
       try {
 
@@ -566,6 +597,14 @@ function update() {
         }
         DEBUG && VERBOSE && console.log(discoveredCell)
         discoveredCells.push(discoveredCell)
+
+        for (let i = 0; i < markedCells.length; i++) {
+          let alreadyMarked = markedCells[i];
+          if (discoveredCell.col == alreadyMarked.col && alreadyMarked.row == discoveredCell.row) {
+            markedCells.splice(i, 1)
+            console.log('discover a marked cell - unmark', alreadyMarked, markedCells)
+          }
+        }
       }
       DEBUG && console.groupEnd()
     }
@@ -579,9 +618,44 @@ function update() {
     
   }
 
+
+  if (marked) {
+    console.log('resolving marked')
+    marked = false
+
+    if (pointedCell) {
+
+      DEBUG && console.debug('pointed cell for mark', pointedCell)
+
+      console.log('marked cells', markedCells)
+      let mark = true
+      for (let i = 0; i < markedCells.length; i++) {
+        let alreadyMarked = markedCells[i];
+        if (pointedCell.col == alreadyMarked.col && alreadyMarked.row == pointedCell.row) {
+          console.log('unmark', alreadyMarked)
+          markedCells.splice(i, 1)
+          mark = false
+          console.log('marked cells after demarking', markedCells)
+          break
+        }
+      }
+      
+      if (mark) {
+        console.log('mark', pointedCell)
+        markedCells.push({row: pointedCell.row, col: pointedCell.col, x: pointedCell.x, y: pointedCell.y})
+
+      }
+
+    }
+  
+
+  }
+
 }
 
 const discoveredCells: Cell[] = []
+
+const markedCells: Cell[] = []
 
 function processInput() {}
 
