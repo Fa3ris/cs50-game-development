@@ -100,19 +100,24 @@ while (queue.length > 0) {
         continue;
     }
 
-    cell.hidden = false
-
-    discoveredRowCol.push({row: firstElement.row, col: firstElement.col})
     
     if (cell.state != CellState.EMPTY) {
         DEBUG && console.log('cell not empty, do not reveal neighbors -> exit')
-
+        
         if (cell.state == CellState.MINE) {
-            DEBUG && console.log('%clet mine hidden', "color:yellow")
+            (DEBUG || true) && console.log('%clet mine hidden', "color:yellow")
             cell.hidden = true
+        } else {
+            (DEBUG || true) && console.log('%creveal numbered cell', "color:yellow")
+            cell.hidden = false
+            discoveredRowCol.push({row: firstElement.row, col: firstElement.col})
+
         }
         continue;
     }
+
+    cell.hidden = false
+    discoveredRowCol.push({row: firstElement.row, col: firstElement.col})
 
     const {row, col} = firstElement
 
@@ -199,8 +204,4 @@ export function getCellState(row: number, col: number, debug = false): CellState
 function gridIndex(row: number, col: number): number {
 
     return gridWidth * row + col
-}
-
-function invalidRowCol(row: number, col: number): boolean {
-    return  row < 0 || row > _maxRows || col < 0 || col > _maxCols
 }
