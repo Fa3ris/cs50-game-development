@@ -1,9 +1,15 @@
 const DEBUG = false
-const VERBOSE = true
+const VERBOSE = false
 
 type Cell = {
     hidden: boolean
     state: CellState,
+    count: number
+}
+
+type CellPos = {
+    row: number,
+    col: number
 }
 
 let grid: Cell[];
@@ -21,32 +27,84 @@ export function initGrid(rows: number, cols: number): void {
     const totalCells = rows * cols
     grid = []
 
-    for (let i = 0; i < totalCells; i++) {
-
-        // TODO GENERATE cell
-        const cell = {
+    for (let i = 0; i < totalCells; i++) { // empty cells
+        const cell: Cell = {
             hidden: true,
             state: CellState.EMPTY,
-        }
-
-        CellState[2]
-        if (i == 0) {
-            cell.state = CellState.ONE
-        }
-
-        if (i>0 && i % 5 == 0) {
-            cell.state = CellState.MINE
-        }
-
-        if (i % rows ==0) {
-            cell.state = CellState.THREE
-        }
-
-        if (((i + 1) % cols) == 0) {
-            cell.state = CellState.SIX
+            count: 0
         }
 
         grid.push(cell)
+    }
+
+    // TODO: generate mines
+    const minePositions: CellPos[] = [
+        {
+            row: 0,
+            col: 0
+        },
+        {
+            row: 5,
+            col: 9
+        },
+    ]
+
+    for (let i = 0; i <= _maxRows; i++) {
+        minePositions.push({
+            row: i,
+            col: 2
+        })
+    }
+
+    for (const minePosition of minePositions) {
+
+        const invalidRowCol = minePosition.row < 0 || minePosition.row > _maxRows || minePosition.col < 0 || minePosition.col > _maxCols
+
+        if (invalidRowCol) {
+            console.error('invalid mine position', minePosition)
+            continue
+        }
+
+        const mineIndex = gridIndex(minePosition.row, minePosition.col)
+        const mineCell = grid[mineIndex]
+
+        mineCell.count = -1
+        mineCell.state = CellState.MINE
+
+         /* neighbor cells */
+        const neighbors: CellPos[] = []
+
+        for (let i of [-1, 0, 1]) {
+            for (let j of [-1, 0, 1]) {
+                if (i == 0 && j == 0) { /* skip current cell */
+                    continue
+                }
+                neighbors.push({
+                    row: minePosition.row + j,
+                    col: minePosition.col + i
+                })
+
+            }
+        }
+
+        for (let neighbor of neighbors) {
+            const invalidRowCol = neighbor.row < 0 || neighbor.row > _maxRows || neighbor.col < 0 || neighbor.col > _maxCols
+
+            if (invalidRowCol) {
+                continue
+            }
+            const neighborIndex = gridIndex(neighbor.row, neighbor.col)
+            const neighborCell = grid[neighborIndex]
+
+            if (neighborCell.count < 0) { // it is a mine
+                continue
+            }            
+            ++neighborCell.count
+
+            neighborCell.state = neighborCell.count // enum values are mapped to count
+
+            DEBUG && console.log('neighbor is', neighborCell, CellState[neighborCell.state])
+        }
     }
 }
 
