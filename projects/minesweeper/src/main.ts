@@ -1,10 +1,20 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
-import { CellState, clickCell, getCellState, initGrid } from "./grid";
+import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions } from "./grid";
 
 const DEBUG = true
 const VERBOSE = false
+
+
+enum GameState {
+  PLAY,
+  LOSE,
+  WIN
+}
+
+let gameState: GameState = GameState.PLAY
+
 
 /* CANVAS */
 const W = 432;
@@ -237,7 +247,6 @@ function draw() {
   ctx.textBaseline = 'bottom'
   ctx.translate(gridX0 - cellDim, gridY0)
 
-  ctx.fillRect(0, 0, 1, 1)
   for (let i = 0; i <= nCols; i ++) {
 
     ctx.translate(cellDim, 0);
@@ -259,7 +268,6 @@ function draw() {
 
   ctx.translate(gridX0, gridY0 - cellDim)
 
-  ctx.fillRect(0, 0, 1, 1)
 
   ctx.textBaseline = 'middle'
   for (let i = 0; i <= nRows; i++) {
@@ -337,6 +345,7 @@ function draw() {
   countCursor = 0
 }
 
+let revealCells = false
 
 function drawCells() {
   ctx.save()
@@ -352,12 +361,11 @@ function drawCells() {
 
   for (const discoveredCell of discoveredCells) {
 
-    const state = getCellState(discoveredCell.row, discoveredCell.col)
+    const state = getCellState(discoveredCell.row, discoveredCell.col, revealCells)
 
     if (state == CellState.HIDDEN) { continue }
 
-    let content: string = cellContent(state)
-
+    const content: string = cellContent(state)
     
     ctx.fillText(content, discoveredCell.x + halfCell, discoveredCell.y + yShift)
   }
@@ -493,13 +501,39 @@ function update() {
 
   if (clicked) {
 
+    clicked = false
+
+    if (gameState !== GameState.PLAY) {
+      console.log('not in play', GameState[gameState])
+      return
+    }
+
     DEBUG && console.debug('resolve click')
 
     if (pointedCell) {
       DEBUG && console.log('pointed cell', pointedCell)
 
-      let cellsRevealed = clickCell(pointedCell.row, pointedCell.col)
+      let cellsRevealed: CellPos[]
+      try {
 
+        cellsRevealed = clickCell(pointedCell.row, pointedCell.col)
+        
+      } catch (error) {
+        console.log('you lose', minePositions)
+        for (let pos of minePositions ) {
+          const discoveredCell = {
+            row: pos.row,
+            col: pos.col,
+            x: gridX0 + pos.col * cellDim,
+            y: gridY0 + pos.row * cellDim,
+          }
+          DEBUG && VERBOSE && console.log(discoveredCell)
+          discoveredCells.push(discoveredCell)
+        }
+        gameState = GameState.LOSE
+        revealCells = true
+        return
+      }
       DEBUG && console.group('discovered cells')
       for (let cellRevealed of cellsRevealed) {
 
@@ -516,7 +550,7 @@ function update() {
     }
     DEBUG && console.log('discovered cells', discoveredCells.length)
 
-    clicked = false
+    
   }
 
 }

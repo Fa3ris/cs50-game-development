@@ -7,7 +7,7 @@ type Cell = {
     count: number
 }
 
-type CellPos = {
+export type CellPos = {
     row: number,
     col: number
 }
@@ -19,11 +19,16 @@ let gridWidth: number
 let _maxRows: number;
 let _maxCols: number
 
+let safeCellTotal: number
+
+export let minePositions: CellPos[]
+
 export function initGrid(rows: number, cols: number): void {
 
     _maxRows = rows - 1
     _maxCols = cols - 1
     gridWidth = cols;
+
     const totalCells = rows * cols
     grid = []
 
@@ -37,24 +42,52 @@ export function initGrid(rows: number, cols: number): void {
         grid.push(cell)
     }
 
-    // TODO: generate mines
-    const minePositions: CellPos[] = [
-        {
-            row: 0,
-            col: 0
-        },
-        {
-            row: 5,
-            col: 9
-        },
-    ]
+    minePositions = []
 
-    for (let i = 0; i <= _maxRows; i++) {
+    let mineTotal = 45;
+
+    safeCellTotal = totalCells - mineTotal
+
+    const candidateRows = rangeArray(rows)
+    const candidateCols = rangeArray(cols)
+
+    const mineIndices: number[] = []
+
+    let failedTries = 0
+
+    while (mineTotal > 0) {
+        console.group('candidate rows', candidateRows, 'candidate cols', candidateCols)
+        const mineRowIndex = randomIndex(candidateRows)
+        const mineColIndex = randomIndex(candidateCols)
+
+        const mineRow = candidateRows[mineRowIndex]
+        const mineCol = candidateCols[mineColIndex]
+
+        const mineGridIndex = gridIndex(mineRow, mineCol)
+
+        console.log(mineGridIndex, mineIndices)
+        if (mineIndices.includes(mineGridIndex)) {
+            console.error('row col already marked with mine', mineRow, mineCol)
+            ++failedTries
+            console.groupEnd()
+            continue
+        }
+
+
+        console.log('selected', mineRow, mineCol)
+
+        mineIndices.push(mineGridIndex)
+
         minePositions.push({
-            row: i,
-            col: 2
+            row: mineRow,
+            col: mineCol
         })
-    }
+        console.log('mine pos', JSON.stringify(minePositions))
+        console.groupEnd()
+        --mineTotal
+    }    
+
+    console.log('have failed', failedTries)
 
     for (const minePosition of minePositions) {
 
@@ -108,8 +141,14 @@ export function initGrid(rows: number, cols: number): void {
     }
 }
 
+function randomIndex(array: any[]): number {
+    return Math.floor(Math.random() * array.length)
+}
 
 
+function rangeArray(n: number): number[] {
+    return [...Array(n).keys()]
+}
 
 export function clickCell(row: number, col: number): {row: number, col: number}[] {
 
