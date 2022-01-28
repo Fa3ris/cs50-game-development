@@ -265,14 +265,20 @@ function draw() {
 
 
   if (gameState == GameState.LOSE) {
-  ctx.fillText(`you LOSE :(`,  (W - ctx.measureText(`you LOSE :(`).width) / 2, H - 50)
+   ctx.fillText(`you LOSE :(`,  (W - ctx.measureText(`you LOSE :(`).width) / 2, H - 50)
   
-}
+  }
 
-if (gameState == GameState.WIN) {
+  if (gameState == GameState.WIN) {
   
     ctx.fillText(`you WIN :)`,  (W - ctx.measureText(`you WIN :)`).width) / 2, H - 50)
   }
+
+  let text = `marked cells : ${markedCells.length}`
+  ctx.fillText(text, W - ctx.measureText(text).width - 5, 10)
+  
+  text = `total mines: ${minePositions.length - markedCells.length}`
+  ctx.fillText(text, W - ctx.measureText(text).width - 5, 20)
 
   ctx.restore()
 
