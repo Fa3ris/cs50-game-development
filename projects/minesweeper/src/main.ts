@@ -2,8 +2,9 @@ import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, safeCellTotal } from "./grid";
+import { beginFrame, doButton, isActive, isHot, uiState } from "./ui";
 
-const DEBUG = true
+const DEBUG = false
 const VERBOSE = false
 
 const GRID = false
@@ -51,6 +52,13 @@ let cursorPosition: Vector2D = new Vector2D(0, 0)
 
 let countCursor = 0
 
+
+const discoveredCells: Cell[] = []
+
+const markedCells: Cell[] = []
+
+let revealCells = false
+
 ctx.canvas.addEventListener('mousemove', (e) => {
 
   /* many events are fired between a redraw */
@@ -59,6 +67,9 @@ ctx.canvas.addEventListener('mousemove', (e) => {
 
   cursorPosition.x = e.offsetX
   cursorPosition.y = e.offsetY
+
+  uiState.cursorPosition.x = e.offsetX,
+  uiState.cursorPosition.y = e.offsetY
 
   redraw = true
 })
@@ -100,6 +111,27 @@ ctx.canvas.addEventListener('contextmenu', (e) => {
   redraw = true
 })
 
+
+ctx.canvas.addEventListener('mousedown', (e) => {
+
+  if (e.button == 0) { // left click
+    uiState.mouseLeftDown = true
+  }
+
+  redraw = true
+})
+
+
+ctx.canvas.addEventListener('mouseup', (e) => {
+
+
+  if (e.button == 0) {  // left click
+
+    uiState.mouseLeftDown = false
+  }
+
+  redraw = true
+})
 
 
 document.addEventListener("keydown", function (e) {
@@ -144,14 +176,17 @@ type Quad = {
 
 let grid: Quad
 
+
+
 main();
 
 async function main() {
 
+
   const halfCol = Math.floor(nCols / 2)
   const halfRow = Math.floor(nRows / 2)
 
-  initGrid(nRows, nCols)
+  initGrid(nRows, nCols, 15)
 
   minesToFind = minePositions.length
 
@@ -213,6 +248,73 @@ async function main() {
 
 
 
+function resetGame() {
+
+  clicked = false
+  marked = false
+
+  revealCells = false
+  discoveredCells.length = 0
+  markedCells.length = 0
+
+  const halfCol = Math.floor(nCols / 2)
+  const halfRow = Math.floor(nRows / 2)
+
+  initGrid(nRows, nCols, 15)
+
+  minesToFind = minePositions.length
+
+  console.log('need to find', minesToFind, 'mines')
+
+  grid = {
+    x: gridX0,
+    y: gridY0,
+    w: gridFinalW,
+    h: gridFinalH,
+    baseCol: 0,
+    baseRow: 0
+  }
+
+  topLeft = {
+    x: gridX0,
+    y: gridY0,
+    w: (halfCol) * cellDim,
+    h: (halfRow) * cellDim,
+    baseCol: 0,
+    baseRow: 0
+  }
+
+  topRight = {
+    x: gridX0 + halfCol * cellDim,
+    y: gridY0,
+    w: (nCols- halfCol) * cellDim,
+    h: halfRow * cellDim,
+    baseCol: halfCol,
+    baseRow: 0
+  }
+
+  bottomLeft = {
+    x: gridX0,
+    y: gridY0 + halfRow *cellDim,
+    w: (halfCol) * cellDim,
+    h: (nRows - halfRow) * cellDim,
+    baseCol: 0,
+    baseRow: halfRow
+  }
+
+  bottomRight = {
+    x: gridX0 + halfCol * cellDim,
+    y: gridY0 + halfRow *cellDim,
+    w: (nCols- halfCol) * cellDim,
+    h: (nRows - halfRow) * cellDim,
+    baseCol: halfCol,
+    baseRow: halfRow
+  }
+
+
+}
+
+
 function isinQuad(point:Vector2D, quad: Quad): boolean {
 
   return pointIsInQuad(point.x, point.y, quad.x, quad.y, quad.w, quad.h)
@@ -220,10 +322,10 @@ function isinQuad(point:Vector2D, quad: Quad): boolean {
 
 function draw() {
 
+  
   if (!redraw) { return }
   
   console.debug('redraw')
-
   ctx.clearRect(0, 0, W, H);
 
   ctx.save()
@@ -402,9 +504,41 @@ function draw() {
   redraw = false
   console.debug('reset count cursor')
   countCursor = 0
+
+
+  ctx.save()
+
+    ctx.fillStyle = 'white'
+    if (isHot(button.id)) {
+      ctx.fillStyle = 'lightgrey'
+    }
+
+    if (isActive(button.id)) {
+      ctx.fillStyle = 'yellow'
+    }
+    
+    ctx.fillRect(button.x, button.y, button.w, button.h)
+
+    ctx.fillStyle = "black"
+    ctx.textBaseline = 'middle'
+    ctx.textAlign = 'center'
+    ctx.fillText("reset", button.x + button.w * .5 , button.y + button.h * .5)
+
+    
+  ctx.restore()
+
+  ctx.save()
+
+    ctx.globalAlpha = .5
+    ctx.fillStyle = uiState.mouseLeftDown ? "red": "blue"
+
+    ctx.fillRect(uiState.cursorPosition.x - 5, uiState.cursorPosition.y - 5, 10, 10)
+  ctx.restore()
+
+
 }
 
-let revealCells = false
+
 
 function drawCells() {
   ctx.save()
@@ -544,7 +678,34 @@ let insideBottomRight: boolean
 
 let pointedCell: Cell | undefined
 
+
+type Button = {
+  id: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number
+}
+
+let button: Button = {
+  id: 1,
+  x: W - 75,
+  y: H / 2,
+  w: 50,
+  h: 20
+}
+
 function update() {
+
+  beginFrame()
+
+  if (doButton(button.id, button.x, button.y, button.w, button.h)) {
+    console.log('button clicked')
+
+    resetGame()
+    return
+
+  }
 
   pointedCell = undefined
 
@@ -710,9 +871,7 @@ function update() {
 
 }
 
-const discoveredCells: Cell[] = []
 
-const markedCells: Cell[] = []
 
 function processInput() {}
 
@@ -732,7 +891,7 @@ function getRenderingContext(): CanvasRenderingContext2D {
 
 
 
-function pointIsInQuad(x1: number, y1: number, x2: number, y2: number, w2: number, h2: number): boolean {
+export function pointIsInQuad(x1: number, y1: number, x2: number, y2: number, w2: number, h2: number): boolean {
 
   const left = x2;
   const right = x2 + w2;
