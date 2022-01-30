@@ -41,7 +41,9 @@ export function doButton(btnId: number, btnX: number, btnY: number, btnW: number
         setHot(btnId)
     }
 
-    if (isHot(btnId) && uiState.mouseLeftDown) {
+    if (isHot(btnId) && uiState.mouseLeftDown && !hasActive()) {
+
+        console.log('active id', uiState.activeItem)
 
         /* idea for later maybe
         
@@ -89,9 +91,34 @@ function clearActive(): void {
     uiState.activeItem = 0
 }
 
+function disableActive(): void {
+    setActive(-1)
+}
+
+function hasActive(): boolean {
+    return uiState.activeItem != 0
+}
+
 export function beginFrame(): void {
 
     clearHot()
+}
+
+
+export function endFrame(): void {
+
+    if (!uiState.mouseLeftDown) {
+        clearActive()
+    } else {
+        /* 
+            mouse is down outside of a widget
+            if mouse stays down while moving over the element, prevent this element from activating
+            by setting a dummy id
+        */
+        if (!hasActive()) {
+            disableActive()
+        }
+    }
 }
 
 function clearHot(): void {
@@ -105,4 +132,10 @@ type ButtonState = {
     h: number,
     isHot: boolean,
     isActive: boolean
+}
+
+let idCounter = 0
+
+export function generateId(): number {
+    return ++idCounter
 }

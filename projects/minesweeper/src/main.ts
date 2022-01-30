@@ -2,7 +2,7 @@ import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, safeCellTotal } from "./grid";
-import { beginFrame, doButton, isActive, isHot, uiState } from "./ui";
+import { beginFrame, doButton, endFrame, generateId, isActive, isHot, uiState } from "./ui";
 
 const DEBUG = true
 const VERBOSE = false
@@ -511,20 +511,20 @@ function draw() {
   ctx.save()
 
     ctx.fillStyle = 'white'
-    if (isHot(button.id)) {
+    if (isHot(resetButton.id)) {
       ctx.fillStyle = 'lightgrey'
     }
 
-    if (isActive(button.id)) {
+    if (isActive(resetButton.id)) {
       ctx.fillStyle = 'yellow'
     }
     
-    ctx.fillRect(button.x, button.y, button.w, button.h)
+    ctx.fillRect(resetButton.x, resetButton.y, resetButton.w, resetButton.h)
 
     ctx.fillStyle = "black"
     ctx.textBaseline = 'middle'
     ctx.textAlign = 'center'
-    ctx.fillText("reset", button.x + button.w * .5 , button.y + button.h * .5)
+    ctx.fillText("reset", resetButton.x + resetButton.w * .5 , resetButton.y + resetButton.h * .5)
 
     
   ctx.restore()
@@ -692,8 +692,8 @@ type Button = {
   h: number
 }
 
-let button: Button = {
-  id: 1,
+const resetButton: Button = {
+  id: generateId(),
   x: W - 75,
   y: H / 2,
   w: 50,
@@ -704,13 +704,15 @@ function update() {
 
   beginFrame()
 
-  if (doButton(button.id, button.x, button.y, button.w, button.h)) {
+  if (doButton(resetButton.id, resetButton.x, resetButton.y, resetButton.w, resetButton.h)) {
     console.log('button clicked')
 
     resetGame()
     return
 
   }
+
+  endFrame()
 
   pointedCell = undefined
 
