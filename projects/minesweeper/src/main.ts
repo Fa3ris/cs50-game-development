@@ -4,7 +4,7 @@ import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, safeCellTotal } from "./grid";
 import { beginFrame, doButton, isActive, isHot, uiState } from "./ui";
 
-const DEBUG = false
+const DEBUG = true
 const VERBOSE = false
 
 const GRID = false
@@ -27,8 +27,8 @@ const gridX0 = 40
 const gridY0 = 30
 
 
-const nRows = 10
-const nCols = 20
+const nRows = 5
+const nCols = 5
 
 const gridW = 300
 const gridH = 100
@@ -36,7 +36,7 @@ const gridH = 100
 let redraw = true
 
 
-const cellDim = Math.max(gridW / nCols, gridH / nRows)
+const cellDim = Math.min(Math.max(gridW / nCols, gridH / nRows), 30)
 
 const gridFinalW = nCols * cellDim
 
@@ -176,6 +176,7 @@ type Quad = {
 
 let grid: Quad
 
+let numMines = 3
 
 
 main();
@@ -186,7 +187,7 @@ async function main() {
   const halfCol = Math.floor(nCols / 2)
   const halfRow = Math.floor(nRows / 2)
 
-  initGrid(nRows, nCols, 15)
+  initGrid(nRows, nCols, numMines)
 
   minesToFind = minePositions.length
 
@@ -250,6 +251,7 @@ async function main() {
 
 function resetGame() {
 
+  gameState = GameState.PLAY
   clicked = false
   marked = false
 
@@ -260,7 +262,7 @@ function resetGame() {
   const halfCol = Math.floor(nCols / 2)
   const halfRow = Math.floor(nRows / 2)
 
-  initGrid(nRows, nCols, 15)
+  initGrid(nRows, nCols, numMines)
 
   minesToFind = minePositions.length
 
@@ -527,13 +529,16 @@ function draw() {
     
   ctx.restore()
 
-  ctx.save()
+  if (DEBUG) { // cursor
 
-    ctx.globalAlpha = .5
-    ctx.fillStyle = uiState.mouseLeftDown ? "red": "blue"
-
-    ctx.fillRect(uiState.cursorPosition.x - 5, uiState.cursorPosition.y - 5, 10, 10)
-  ctx.restore()
+    ctx.save()
+  
+      ctx.globalAlpha = .5
+      ctx.fillStyle = uiState.mouseLeftDown ? "red": "blue"
+  
+      ctx.fillRect(uiState.cursorPosition.x - 5, uiState.cursorPosition.y - 5, 10, 10)
+    ctx.restore()
+  }
 
 
 }

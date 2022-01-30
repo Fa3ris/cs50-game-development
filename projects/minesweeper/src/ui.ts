@@ -51,15 +51,17 @@ export function doButton(btnId: number, btnX: number, btnY: number, btnW: number
             }
             return true
         */
+       // TODO: clear mouseLeftDown to avoid process other buttons
+       // TODO: keep ordering of element in order of depth
         setActive(btnId)
 
-    } else if (isActive(btnId) && isHot(btnId) && !uiState.mouseLeftDown) {
+    } else if (isActive(btnId) && !uiState.mouseLeftDown) {
         clearActive()
-        res = true
-    } else if (isActive(btnId) && !uiState.mouseLeftDown) { // release mouse outside of button
-        clearActive()
-    }
-
+        if (isHot(btnId)) {
+            res = true
+        }
+    } 
+    
     
     return res
 }
