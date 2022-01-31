@@ -2,7 +2,7 @@ import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, safeCellTotal } from "./grid";
-import { beginFrame, doButton, endFrame, generateId, isActive, isHot, uiState } from "./ui";
+import { beginFrame, buttonClicked, dragButton, endFrame, generateId, isActive, isHot, uiState } from "./ui";
 
 const DEBUG = true
 const VERBOSE = false
@@ -80,11 +80,11 @@ let marked = false
 ctx.canvas.addEventListener('click', (e) => {
 
   if (clicked || marked) {
-    DEBUG && console.log('wait to resolve click and mark', clicked, marked)
+    DEBUG && console.log('click event wait to resolve', {clicked, marked})
     return
   }
 
-  DEBUG && console.log('clicked')
+  DEBUG && console.log('clicked event')
 
   cursorPosition.x = e.offsetX
   cursorPosition.y = e.offsetY
@@ -137,7 +137,7 @@ ctx.canvas.addEventListener('mouseup', (e) => {
 document.addEventListener("keydown", function (e) {
   if (e.key === "Alt") {
     // seems that no keyup is fired for alt key
-    DEBUG && console.log("ignore alt");
+    DEBUG && console.debug("ignore alt");
     return;
   }
 
@@ -152,12 +152,12 @@ document.addEventListener("keyup", function (e) {
 
 window.addEventListener("keydown", function (e) {
   if (e.key === " " && e.target == document.body) {
-    DEBUG && console.log("prevent scrolling");
+    DEBUG && console.debug("prevent scrolling");
     e.preventDefault();
   }
 
   if (e.key === "ArrowDown" && e.target == document.body) {
-    DEBUG && console.log("prevent scrolling");
+    DEBUG && console.debug("prevent scrolling");
     e.preventDefault();
   }
 });
@@ -702,15 +702,25 @@ const resetButton: Button = {
 
 function update() {
 
+
+  (clicked || marked) && console.debug('begin update', {clicked, marked})
+
   beginFrame()
+  let drag = dragButton(resetButton.id, resetButton.x, resetButton.y, resetButton.w, resetButton.h)
 
-  if (doButton(resetButton.id, resetButton.x, resetButton.y, resetButton.w, resetButton.h)) {
-    console.log('button clicked')
+  if (drag) {
+    resetButton.x = drag.x
+    resetButton.y = drag.y
 
-    resetGame()
-    return
-
+    console.debug('drag',  {clicked, marked})
   }
+
+  if (buttonClicked(resetButton.id, resetButton.x, resetButton.y, resetButton.w, resetButton.h)) {
+    resetGame()
+    console.debug('reset -> exit')
+    return
+  }
+
 
   endFrame()
 
@@ -720,7 +730,12 @@ function update() {
 
   insideGrid = isinQuad(cursorPosition, grid)
 
-  if (!insideGrid) { return }
+  if (!insideGrid) { 
+    clicked = false
+    marked = false  
+    return
+  
+  }
 
   insideTopLeft = isinQuad(cursorPosition, topLeft)
   insideTopRight = isinQuad(cursorPosition, topRight)
