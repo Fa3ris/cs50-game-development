@@ -2,7 +2,7 @@ import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { Vector2D } from "~common/geometry";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { CellPos, CellState, clickCell, getCellState, initGrid, minePositions, safeCellTotal } from "./grid";
-import { beginFrame, buttonClicked, dragButton, endFrame, generateId, isActive, isHot, uiState } from "./ui";
+import { beginFrame, buttonClicked, dragButton, resizeXEdgeButton, endFrame, generateId, isActive, isHot, uiState, GUIRect, Button, renderGUI } from "./ui";
 
 const DEBUG = true
 const VERBOSE = false
@@ -84,7 +84,7 @@ ctx.canvas.addEventListener('click', (e) => {
     return
   }
 
-  DEBUG && console.log('clicked event')
+  // DEBUG && console.log('clicked event')
 
   cursorPosition.x = e.offsetX
   cursorPosition.y = e.offsetY
@@ -507,27 +507,31 @@ function draw() {
   console.debug('reset count cursor')
   countCursor = 0
 
+  if (false) {
 
-  ctx.save()
+    ctx.save()
+  
+      ctx.fillStyle = 'white'
+      if (isHot(resetButton.id)) {
+        ctx.fillStyle = 'lightgrey'
+      }
+  
+      if (isActive(resetButton.id)) {
+        ctx.fillStyle = 'yellow'
+      }
+      
+      ctx.fillRect(resetButton.x, resetButton.y, resetButton.w, resetButton.h)
+  
+      ctx.fillStyle = "black"
+      ctx.textBaseline = 'middle'
+      ctx.textAlign = 'center'
+      ctx.fillText("reset", resetButton.x + resetButton.w * .5 , resetButton.y + resetButton.h * .5)
+  
+      
+    ctx.restore()
+  }
 
-    ctx.fillStyle = 'white'
-    if (isHot(resetButton.id)) {
-      ctx.fillStyle = 'lightgrey'
-    }
-
-    if (isActive(resetButton.id)) {
-      ctx.fillStyle = 'yellow'
-    }
-    
-    ctx.fillRect(resetButton.x, resetButton.y, resetButton.w, resetButton.h)
-
-    ctx.fillStyle = "black"
-    ctx.textBaseline = 'middle'
-    ctx.textAlign = 'center'
-    ctx.fillText("reset", resetButton.x + resetButton.w * .5 , resetButton.y + resetButton.h * .5)
-
-    
-  ctx.restore()
+  renderGUI(ctx)
 
   if (DEBUG) { // cursor
 
@@ -700,27 +704,62 @@ const resetButton: Button = {
   h: 20
 }
 
+const randomButton: GUIRect = {
+  x0: 10,
+  y0: 10,
+  x1: 50,
+  y1: 30
+}
+
 function update() {
+
 
 
   (clicked || marked) && console.debug('begin update', {clicked, marked})
 
   beginFrame()
-  let drag = dragButton(resetButton.id, resetButton.x, resetButton.y, resetButton.w, resetButton.h)
 
-  if (drag) {
-    resetButton.x = drag.x
-    resetButton.y = drag.y
+  let randomClicked = Button(1, "random", randomButton)
 
-    console.debug('drag',  {clicked, marked})
+  if (randomClicked) {
+    console.log("%cThis is a green text", "color:green");
   }
 
-  if (buttonClicked(resetButton.id, resetButton.x, resetButton.y, resetButton.w, resetButton.h)) {
-    resetGame()
-    console.debug('reset -> exit')
-    return
-  }
+  if (false) {
 
+    const drag = dragButton(resetButton.id, resetButton.x, resetButton.y, resetButton.w, resetButton.h) || new Vector2D(0, 0)
+  
+    if (drag) {
+      console.log('drag', drag)
+      resetButton.x = drag.x
+      resetButton.y = drag.y
+  
+      console.debug('drag',  {clicked, marked})
+    }
+  
+    let leftEdgeShift = resizeXEdgeButton(resetButton.id, resetButton.x, resetButton.y, 5, resetButton.h) || 2
+  
+    if (leftEdgeShift) {
+  
+        console.log('left edge shift', leftEdgeShift)
+    
+        let rightEdge = resetButton.x + resetButton.w;
+    
+        resetButton.x += leftEdgeShift
+  
+        resetButton.x = Math.min(rightEdge - 10, resetButton.x)
+    
+        resetButton.w = rightEdge - resetButton.x
+    }
+  
+    if (buttonClicked(resetButton.id, resetButton.x, resetButton.y, resetButton.w, resetButton.h)) {
+      resetGame()
+      console.debug('reset -> exit')
+      return
+    }
+
+
+  }
 
   endFrame()
 
