@@ -32,7 +32,10 @@ type UIState = {
     pressPosition: Vector2D,
 
     wentActiveThisFrame: boolean
-    resizeSide: ResizeSide | undefined
+    resizeSide: ResizeSide | undefined,
+
+    foregroundItem: number | undefined,
+    foregroundItemRect: Rect | undefined
 }
 
 type Drag = Vector2D
@@ -67,7 +70,9 @@ export const uiState: UIState = {
     pressPosition: new Vector2D(0, 0),
     wentActiveThisFrame: false,
 
-    resizeSide: undefined
+    resizeSide: undefined,
+    foregroundItem: undefined,
+    foregroundItemRect: undefined
 }
 
 
@@ -374,10 +379,25 @@ export function endFrame(): void {
 export function Button(id: number, label: string, rect: Rect): boolean {
     
 
-    if (inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, rect)) {
+    const hovered = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, rect)
+    if (hovered) {
 
-        uiState.hasHot = true
-        uiState.hotItem = id
+        if (uiState.foregroundItem == undefined) {
+            uiState.hasHot = true
+            uiState.hotItem = id
+        } else if (uiState.foregroundItem == id) {
+            uiState.hasHot = true
+            uiState.hotItem = id
+        } else if (uiState.foregroundItemRect) {
+            const hoverForeground = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, uiState.foregroundItemRect)
+
+            if (!hoverForeground) {
+                uiState.hasHot = true
+                uiState.hotItem = id
+            }
+            
+        }
+
     }
 
     let res = false
@@ -391,6 +411,8 @@ export function Button(id: number, label: string, rect: Rect): boolean {
                 uiState.hasActive = true
                 uiState.activeItem = id
                 uiState.activable = true // return true when release
+
+                uiState.foregroundItem = id // same as activeItem ?
 
                 uiState.pressPosition.x = uiState.cursorPosition.x // why ?
                 uiState.pressPosition.y = uiState.cursorPosition.y
@@ -431,6 +453,13 @@ export function Button(id: number, label: string, rect: Rect): boolean {
 
             console.log('new rect', rect)
             uiState.interactions = 0
+
+            uiState.foregroundItemRect = {
+                x0: rect.x0,
+                y0: rect.y0,
+                x1: rect.x1,
+                y1: rect.y1
+            }
         }
     }
 
@@ -700,6 +729,7 @@ export function Button(id: number, label: string, rect: Rect): boolean {
     }
 
     let buttonCommand: DrawRectCommand = {
+        id,
         rect,
         color,
         label
@@ -767,25 +797,28 @@ export function Button(id: number, label: string, rect: Rect): boolean {
             y1: rect.y1
         }
 
-        const insideTopLeft = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, topLeftCorner)
-        const insideTopRight = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, topRightCorner)
-        const insideBottomLeft = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, bottomLeftCorner)
+        const insideTopLeft     = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, topLeftCorner)
+        const insideTopRight    = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, topRightCorner)
+        const insideBottomLeft  = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, bottomLeftCorner)
         const insideBottomRight = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, bottomRightCorner)
 
-        const insideLeftHandle = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, leftHandle)
+        const insideLeftHandle  = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, leftHandle)
         const insideRightHandle = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, rightHandle)
-        const insideTopHandle = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, topHandle)
-        const insideBottomHandle = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, bottomHandle)
+        const insideTopHandle   = inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, topHandle)
+        const insideBottomHandle= inRect(uiState.cursorPosition.x, uiState.cursorPosition.y, bottomHandle)
 
         if (insideTopLeft)
         {
 
-            console.log('draw top left')
+            
             let handleCommand: DrawRectCommand = {
+                id,
                 rect: topLeftCorner,
                 color: 'red',
                 label: ''
             }
+
+            buttonCommand.additionalDrawCommands = [handleCommand]
 
             drawCommands.push(handleCommand)
 
@@ -793,77 +826,92 @@ export function Button(id: number, label: string, rect: Rect): boolean {
         else if (insideTopRight)
         {
             let handleCommand: DrawRectCommand = {
+                id,
                 rect: topRightCorner,
                 color: 'red',
                 label: ''
             }
+
+            buttonCommand.additionalDrawCommands = [handleCommand]
 
             drawCommands.push(handleCommand)
         } 
         else if (insideBottomLeft)
         {
             let handleCommand: DrawRectCommand = {
+                id,
                 rect: bottomLeftCorner,
                 color: 'red',
                 label: ''
             }
 
+            buttonCommand.additionalDrawCommands = [handleCommand]
             drawCommands.push(handleCommand)
         } 
         else if (insideBottomRight)
         {
 
             let handleCommand: DrawRectCommand = {
+                id,
                 rect: bottomRightCorner,
                 color: 'red',
                 label: ''
             }
 
+            buttonCommand.additionalDrawCommands = [handleCommand]
             drawCommands.push(handleCommand)
 
         } 
         else if (insideLeftHandle) {
 
             let handleCommand: DrawRectCommand = {
+                id,
                 rect: leftHandle,
                 color: 'red',
                 label: ''
             }
 
+            buttonCommand.additionalDrawCommands = [handleCommand]
             drawCommands.push(handleCommand)
 
         } else if (insideRightHandle) {
 
             let handleCommand: DrawRectCommand = {
+                id,
                 rect: rightHandle,
                 color: 'red',
                 label: ''
             }
 
+            buttonCommand.additionalDrawCommands = [handleCommand]
             drawCommands.push(handleCommand)
 
         } else if (insideTopHandle) {
 
             let handleCommand: DrawRectCommand = {
+                id,
                 rect: topHandle,
                 color: 'red',
                 label: ''
             }
+            buttonCommand.additionalDrawCommands = [handleCommand]
 
             drawCommands.push(handleCommand)
 
         } else if (insideBottomHandle) {
 
             let handleCommand: DrawRectCommand = {
+                id,
                 rect: bottomHandle,
                 color: 'red',
                 label: ''
             }
+            buttonCommand.additionalDrawCommands = [handleCommand]
 
             drawCommands.push(handleCommand)
 
+        } else {
         }
-
 
     }
     return res
@@ -873,24 +921,61 @@ export function Button(id: number, label: string, rect: Rect): boolean {
 
 export function renderGUI(ctx: CanvasRenderingContext2D): void {
 
+    if (uiState.foregroundItem != undefined) {
+
+        for (let i = 0; i < drawCommands.length; i++) {
+
+            if (drawCommands[i].id == uiState.foregroundItem) {
+                const currentElt = drawCommands.splice(i, 1);
+                drawCommands.push(...currentElt)
+                break
+            }
+        }
+    }
+
     ctx.save()
+    ctx.strokeStyle = 'black'
+
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
     for (let command of drawCommands) {
 
 
         ctx.fillStyle = command.color
         ctx.fillRect(command.rect.x0, command.rect.y0, command.rect.x1 - command.rect.x0, command.rect.y1 - command.rect.y0)
+        ctx.beginPath()
+        ctx.rect(command.rect.x0, command.rect.y0, command.rect.x1 - command.rect.x0, command.rect.y1 - command.rect.y0)
+        ctx.stroke()
 
         ctx.fillStyle = 'black'
-        ctx.fillText(command.label, command.rect.x0, command.rect.y0)
+        ctx.fillText(command.label, 
+            Math.min(command.rect.x0, command.rect.x1) + Math.abs(command.rect.x1 - command.rect.x0) * .5,
+            Math.min(command.rect.y0, command.rect.y1) + Math.abs(command.rect.y1 - command.rect.y0) * .5,
+            Math.abs(command.rect.x1 - command.rect.x0))
+
+        if (command.additionalDrawCommands) {
+            for (let additional of command.additionalDrawCommands) {
+                ctx.fillStyle = additional.color
+                ctx.fillRect(additional.rect.x0, additional.rect.y0, additional.rect.x1 - additional.rect.x0, additional.rect.y1 - additional.rect.y0)
+        
+                if (additional.label) {
+                    ctx.fillStyle = 'black'
+                    ctx.fillText(additional.label, additional.rect.x0, additional.rect.y0)
+                }
+
+            }
+        }
     }
 
     ctx.restore()
 }
 
 type DrawRectCommand = {
+    id: number
     rect: Rect,
     color: string,
     label: string,
+    additionalDrawCommands?: DrawRectCommand[]
 }
 
 const drawCommands: DrawRectCommand[] = []

@@ -711,6 +711,14 @@ const randomButton: GUIRect = {
   y1: 30
 }
 
+
+const selectButton: GUIRect = {
+  x0: 60,
+  y0: 40,
+  x1: 60 + 30,
+  y1: 40 + 15
+}
+
 function update() {
 
 
@@ -722,8 +730,14 @@ function update() {
   let randomClicked = Button(1, "random", randomButton)
 
   if (randomClicked) {
-    console.log("%cThis is a green text", "color:green");
+    console.log("%creset clicked", "color:green");
   }
+
+  let selectClicked = Button(2, "select", selectButton)
+
+  if (selectClicked) {
+    console.log("%cselect clicked", "color:yellow");
+  } 
 
   if (false) {
 
