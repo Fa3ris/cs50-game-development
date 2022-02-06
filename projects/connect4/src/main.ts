@@ -1,8 +1,7 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
+import { drawGrid, setGrid } from "./grid";
 import { attach } from "./input";
-
-console.log('hello world !!!')
 
 
 /* CANVAS */
@@ -20,6 +19,13 @@ function main ()
     document.querySelector("#root")?.appendChild(ctx.canvas);
     attach(ctx.canvas)
 
+
+    setGrid(
+        20, 10, 
+        6, 7,
+        700, 500,
+        W, H,
+        true)
     setDraw(draw)
 
     setUpdate(update)
@@ -41,6 +47,8 @@ function draw()
 {
 
     ctx.fillRect(0, 0, W, H)
+
+    drawGrid(ctx)
 
 }
 
