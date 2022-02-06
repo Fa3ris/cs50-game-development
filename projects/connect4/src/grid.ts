@@ -2,7 +2,6 @@
 let gridX0 = 40
 let gridY0 = 30
 
-
 let nRows = 10
 let nCols = 10
 
@@ -18,6 +17,8 @@ let gridFinalW = nCols * cellW
 let gridFinalH = nRows * cellH
 
 const GRID = true
+
+let axisLineW = 3
 
 export function setGrid(
     x0: number, y0: number,
@@ -93,54 +94,64 @@ export function setGrid(
 }
 
 
+
 export function drawGrid(ctx: CanvasRenderingContext2D) 
 {
 
-    ctx.save()
-
-    ctx.fillStyle = 'black'
-     /* VERTICAL AXES */
-
-
 ctx.save()
 
-ctx.textBaseline = 'bottom'
-ctx.translate(gridX0 - cellW, gridY0)
-for (let i = 0; i <= nCols; i ++) {
+ctx.fillStyle = 'black'
 
-    ctx.translate(cellW, 0);
-    ctx.beginPath()
-  
-    if (GRID && i % 5 == 0) {
-      ctx.fillText(`${i}`, - ctx.measureText(`${i}`).width / 2, 0)
+ctx.lineWidth = axisLineW
+
+/* VERTICAL AXES */
+ctx.save()
+    ctx.textBaseline = 'bottom'
+    ctx.translate(gridX0 - cellW, gridY0)
+    for (let i = 0; i <= nCols; i ++) {
+
+        ctx.translate(cellW, 0);
+        ctx.beginPath()
+    
+        if (GRID && i % 5 == 0) {
+        ctx.fillText(`${i}`, - ctx.measureText(`${i}`).width / 2, 0)
+        }
+
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, gridFinalH)
+        ctx.stroke()
     }
-
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, gridFinalH)
-    ctx.stroke()
-  }
 ctx.restore()
 
 
  /* HORIZONTAL AXES */
  ctx.save()
+    ctx.translate(gridX0, gridY0 - cellH)
+    ctx.textBaseline = 'middle'
+    for (let i = 0; i <= nRows; i++) {
 
- ctx.translate(gridX0, gridY0 - cellH)
+    ctx.translate(0, cellH);
+    ctx.beginPath()
+    
+    if (GRID && i % 5 == 0) {
+        ctx.fillText(`${i}`, -(3 + ctx.measureText(`${i}`).width), 0)
+    }
+    ctx.moveTo(0, 0);
+    ctx.lineTo(gridFinalW, 0)
+    ctx.stroke()
+    }
+ ctx.restore()
 
-
- ctx.textBaseline = 'middle'
- for (let i = 0; i <= nRows; i++) {
-
-   ctx.translate(0, cellH);
-   ctx.beginPath()
- 
-   if (GRID && i % 5 == 0) {
-     ctx.fillText(`${i}`, -(3 + ctx.measureText(`${i}`).width), 0)
-   }
-   ctx.moveTo(0, 0);
-   ctx.lineTo(gridFinalW, 0)
-   ctx.stroke()
- }
+ /* close border*/
+ ctx.save()
+    ctx.translate(gridX0, gridY0)
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(gridFinalW, 0)
+    ctx.lineTo(gridFinalW, gridFinalH)
+    ctx.lineTo(0, gridFinalH)
+    ctx.closePath()
+    ctx.stroke()
  ctx.restore()
 
  ctx.restore()
