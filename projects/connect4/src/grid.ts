@@ -20,6 +20,12 @@ const GRID = true
 
 let axisLineW = 3
 
+type Slot = {
+    color: string
+}
+
+const coloredSlots: Slot[] = []  
+
 export function setGrid(
     x0: number, y0: number,
     _nRows: number, _nCols: number,
@@ -91,69 +97,90 @@ export function setGrid(
       gridFinalW,
       gridFinalH  
     })
+
+    coloredSlots[1] = {
+        color: 'red'
+    }
+
+
+    coloredSlots[10] = {
+        color: 'gold'
+    }
+
+    console.log(coloredSlots)
 }
 
+
+let gridColor = 'blue'
+
+let slotColor = 'aqua'
 
 
 export function drawGrid(ctx: CanvasRenderingContext2D) 
 {
 
-ctx.save()
+    const slotCenterX = cellW * .5
+    const slotCenterY = cellH * .5
+    const slotRadius = .8 * slotCenterY
 
-ctx.fillStyle = 'black'
+    ctx.save()
 
-ctx.lineWidth = axisLineW
+        /* GRID FRAME */
+        ctx.fillStyle = gridColor
+        ctx.fillRect(gridX0, gridY0, gridFinalW, gridFinalH)
 
-/* VERTICAL AXES */
-ctx.save()
-    ctx.textBaseline = 'bottom'
-    ctx.translate(gridX0 - cellW, gridY0)
-    for (let i = 0; i <= nCols; i ++) {
 
-        ctx.translate(cellW, 0);
-        ctx.beginPath()
-    
-        if (GRID && i % 5 == 0) {
-        ctx.fillText(`${i}`, - ctx.measureText(`${i}`).width / 2, 0)
+        /* SLOTS */
+        ctx.save()
+
+        ctx.translate(gridX0 - cellW, gridY0)
+        ctx.fillStyle = slotColor
+        
+        for (let j = 0; j < nRows; ++j) {
+
+            ctx.save()
+                for (let i = 0; i < nCols; ++i) {
+
+                    ctx.translate(cellW, 0);
+                    ctx.beginPath()
+                
+                    if (GRID && i > 0 && i % 5 == 0 && j == 0) {
+                        ctx.save()
+                            ctx.textBaseline = 'bottom'
+                            ctx.fillText(`${i}`, - ctx.measureText(`${i}`).width / 2, 0)
+                        ctx.restore()
+                    }
+            
+                    const slot = coloredSlots[gridIndex(j, i)]
+                    if (slot) {
+                        ctx.fillStyle = slot.color
+                    } else {
+                        ctx.fillStyle = slotColor
+                    }
+                    ctx.arc(slotCenterX, slotCenterY, slotRadius,  0, 2 * Math.PI)
+                    ctx.fill()
+                }
+
+            ctx.restore()
+
+            if (GRID && j > 0 && j % 5 == 0) {
+                ctx.save()
+                    ctx.textBaseline = 'middle'
+                    ctx.fillText(`${j}`, cellW - 2 * ctx.measureText(`${j}`).width, 0)
+                ctx.restore()
+            }
+
+            ctx.translate(0, cellH)
         }
+        ctx.restore()
 
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, gridFinalH)
-        ctx.stroke()
-    }
-ctx.restore()
+    ctx.restore()
+
+    return
+}
 
 
- /* HORIZONTAL AXES */
- ctx.save()
-    ctx.translate(gridX0, gridY0 - cellH)
-    ctx.textBaseline = 'middle'
-    for (let i = 0; i <= nRows; i++) {
+function gridIndex(row: number, col: number): number {
 
-    ctx.translate(0, cellH);
-    ctx.beginPath()
-    
-    if (GRID && i % 5 == 0) {
-        ctx.fillText(`${i}`, -(3 + ctx.measureText(`${i}`).width), 0)
-    }
-    ctx.moveTo(0, 0);
-    ctx.lineTo(gridFinalW, 0)
-    ctx.stroke()
-    }
- ctx.restore()
-
- /* close border*/
- ctx.save()
-    ctx.translate(gridX0, gridY0)
-    ctx.beginPath()
-    ctx.moveTo(0, 0)
-    ctx.lineTo(gridFinalW, 0)
-    ctx.lineTo(gridFinalW, gridFinalH)
-    ctx.lineTo(0, gridFinalH)
-    ctx.closePath()
-    ctx.stroke()
- ctx.restore()
-
- ctx.restore()
-
+    return nCols * row + col
 }
