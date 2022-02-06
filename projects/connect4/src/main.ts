@@ -1,7 +1,8 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
-import { drawGrid, setGrid } from "./grid";
-import { attach } from "./input";
+import { mouseMove } from "~projects/pong/src/game";
+import { bgColor, drawGrid, gridColumns, hoverColumn, Rect, setGrid } from "./grid";
+import { attach, mouseP } from "./input";
 
 
 /* CANVAS */
@@ -32,7 +33,7 @@ function main ()
 
     start()
 
-    ctx.fillStyle = 'aqua'
+    ctx.fillStyle = bgColor
 
 }
 
@@ -40,9 +41,18 @@ function main ()
 function update(dt: number)
 {
 
+    for (let i = 0; i < gridColumns.length; ++i) {
+
+
+        if (inRect(mouseP.x, mouseP.y, gridColumns[i])) {
+
+            hoverColumn(i, 'red')
+            break
+        }
+    }
 }
 
-
+const DEBUG = false
 function draw()
 {
 
@@ -50,6 +60,14 @@ function draw()
 
     drawGrid(ctx)
 
+    if (DEBUG) {
+        ctx.save()
+            ctx.strokeStyle = 'pink'
+            for (let column of gridColumns) {
+                ctx.strokeRect(column.x0, column.y0, Math.abs(column.x1 - column.x0), Math.abs(column.y1 - column.y0) )
+            }
+        ctx.restore()
+    }
 }
 
 main()
@@ -70,6 +88,11 @@ function getRenderingContext(): CanvasRenderingContext2D {
     ) as CanvasRenderingContext2D;
     return ctx;
   }
+
+
+  function inRect(x: number, y: number, rect: Rect): boolean {
+    return x > rect.x0 && x < rect.x1 && y > rect.y0 && y < rect.y1
+}
 
 /* 
     TODO

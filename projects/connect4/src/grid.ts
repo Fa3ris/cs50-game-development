@@ -1,30 +1,56 @@
+let gridX0: number
+let gridY0: number
 
-let gridX0 = 40
-let gridY0 = 30
+let nRows: number
+let nCols: number
 
-let nRows = 10
-let nCols = 10
+let gridW: number
+let gridH: number
 
-let gridW = 300
-let gridH = 100
+let cellW: number
 
-let cellW = Math.min(Math.max(gridW / nCols, gridH / nRows), 30)
+let cellH: number
 
-let cellH = Math.min(Math.max(gridW / nCols, gridH / nRows), 30)
+let gridFinalW: number
 
-let gridFinalW = nCols * cellW
-
-let gridFinalH = nRows * cellH
+let gridFinalH: number
 
 const GRID = true
-
-let axisLineW = 3
 
 type Slot = {
     color: string
 }
 
-const coloredSlots: Slot[] = []  
+const coloredSlots: Slot[] = []
+
+let columnHeights: number[]
+
+enum Player {
+    ONE,
+    TWO
+}
+
+let currentPlayer: Player = Player.ONE
+
+type HoveredSlot = {
+    row: number
+    col: number,
+    color: string    
+}
+
+let hoveredSlot: HoveredSlot | undefined
+
+export const gridColumns: GridColumn[] = []
+
+type GridColumn = {
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number
+}
+
+export type Rect = GridColumn
+
 
 export function setGrid(
     x0: number, y0: number,
@@ -98,22 +124,45 @@ export function setGrid(
       gridFinalH  
     })
 
-    coloredSlots[1] = {
-        color: 'red'
+  
+   console.log(coloredSlots)
+
+    /* for mouse detection */
+    const colY1 = gridY0 + gridFinalH
+    for (let i = 0; i < nCols ; ++i) {
+        let gridColumn: GridColumn = {
+
+            x0: gridX0 + i * cellW,
+            y0: gridY0,
+            x1: gridX0 + (i + 1) * cellW,
+            y1: colY1
+        }
+
+        gridColumns.push(gridColumn)
     }
 
+    columnHeights = new Array(nCols)
 
-    coloredSlots[10] = {
-        color: 'gold'
-    }
+    columnHeights.fill(0)
 
-    console.log(coloredSlots)
+    Object.seal(columnHeights);
+
+    addSlot(0)
+    addSlot(0)
+    addSlot(0)
+
+    addSlot(1)
+    addSlot(2)
+    addSlot(4)
+
 }
 
 
-let gridColor = 'blue'
+const gridColor = 'blue'
 
-let slotColor = 'aqua'
+const slotColor = 'aqua'
+
+export {slotColor as bgColor} 
 
 
 export function drawGrid(ctx: CanvasRenderingContext2D) 
@@ -174,13 +223,91 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
         }
         ctx.restore()
 
-    ctx.restore()
+        if (hoveredSlot) {
 
-    return
+            if (coloredSlots[gridIndex(hoveredSlot.row, hoveredSlot.col)] == undefined) {
+
+            
+                ctx.save()
+        
+                    ctx.globalAlpha = .8
+                    ctx.translate(gridX0 + hoveredSlot.col * cellW, gridY0 + hoveredSlot.row * cellH)
+            
+                    ctx.fillStyle = hoveredSlot.color;
+                    ctx.beginPath()
+                    ctx.arc(slotCenterX, slotCenterY, slotRadius,  0, 2 * Math.PI)
+                    ctx.fill()
+        
+                ctx.restore()
+
+            }
+
+            hoveredSlot = undefined
+        }
+
+    ctx.restore()
 }
 
 
-function gridIndex(row: number, col: number): number {
+function gridIndex(row: number, col: number): number 
+{
 
     return nCols * row + col
 }
+
+
+
+
+export function hoverColumn(colNum: number, color: string) 
+{
+
+    if (fillableColumn(colNum))
+        hoveredSlot = {
+            row:  nRows - 1 - columnHeights[colNum],
+            col: colNum,
+            color: getColor()
+        }
+}
+
+
+function getColor(): string 
+{
+    if (currentPlayer == Player.ONE) {
+        return 'red'
+    } else {
+        return 'gold'
+    }
+}
+
+function switchPlayer() 
+{
+
+    if (currentPlayer == Player.ONE) {
+        currentPlayer = Player.TWO
+    } else {
+        currentPlayer = Player.ONE
+    }
+}
+
+function addSlot(colNum: number) 
+{
+    if (fillableColumn(colNum)) {
+
+        const row = nRows - 1 - columnHeights[colNum]
+        ++columnHeights[colNum]
+        coloredSlots[gridIndex(row, colNum)] = {
+            color: getColor()
+        }
+        switchPlayer()
+    } else {
+        console.error('invalid col num', colNum, columnHeights)
+    }
+}
+
+function fillableColumn(colNum: number): boolean 
+{
+    return colNum >= 0 && colNum <= nCols && columnHeights[colNum] < nRows
+}
+
+
+

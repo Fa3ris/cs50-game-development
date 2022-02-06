@@ -11,6 +11,12 @@ type MouseP = {
 }
 
 
+export const mouseP : MouseP = {
+    x: 0,
+    y: 0
+}
+
+
 export function attach(elt: HTMLElement) 
 {
 
@@ -100,6 +106,9 @@ function onMouseDown(e: MouseEvent)
 function onMouseMove(e: MouseEvent) {
 
     log('mouse move', e.offsetX, e.offsetY)
+
+    mouseP.x = e.offsetX
+    mouseP.y = e.offsetY
 }
 
 
