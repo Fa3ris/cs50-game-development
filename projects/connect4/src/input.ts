@@ -120,6 +120,7 @@ function onKeyUp(e: KeyboardEvent)
 
 function log(...params: any[])
 {
+    return
     console.log(...params)
 }
 
