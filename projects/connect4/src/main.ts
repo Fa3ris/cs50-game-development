@@ -3,6 +3,7 @@ import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
 import { mouseMove } from "~projects/pong/src/game";
 import { bgColor, drawGrid, gridColumns, hoverColumn, Rect, setGrid } from "./grid";
 import { attach, mouseP } from "./input";
+import { getCommands } from "./input-handler";
 
 
 /* CANVAS */
@@ -30,6 +31,7 @@ function main ()
     setDraw(draw)
 
     setUpdate(update)
+    setProcessInput(processInput)
 
     start()
 
@@ -37,6 +39,19 @@ function main ()
 
 }
 
+
+
+
+function processInput() 
+{
+
+    const commands = getCommands()
+
+    for (let c of commands) {
+        c.execute()
+    }
+
+}
 
 function update(dt: number)
 {

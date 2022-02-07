@@ -147,13 +147,13 @@ export function setGrid(
 
     Object.seal(columnHeights);
 
-    addSlot(0)
-    addSlot(0)
-    addSlot(0)
+    // addSlot(0)
+    // addSlot(0)
+    // addSlot(0)
 
-    addSlot(1)
-    addSlot(2)
-    addSlot(4)
+    // addSlot(1)
+    // addSlot(2)
+    // addSlot(4)
 
 }
 
@@ -195,6 +195,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
                 
                     if (GRID && i > 0 && i % 5 == 0 && j == 0) {
                         ctx.save()
+                            ctx.fillStyle = "black"
                             ctx.textBaseline = 'bottom'
                             ctx.fillText(`${i}`, - ctx.measureText(`${i}`).width / 2, 0)
                         ctx.restore()
@@ -214,6 +215,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
 
             if (GRID && j > 0 && j % 5 == 0) {
                 ctx.save()
+                    ctx.fillStyle = "black"
                     ctx.textBaseline = 'middle'
                     ctx.fillText(`${j}`, cellW - 2 * ctx.measureText(`${j}`).width, 0)
                 ctx.restore()
@@ -289,7 +291,7 @@ function switchPlayer()
     }
 }
 
-function addSlot(colNum: number) 
+export function addSlot(colNum: number) 
 {
     if (fillableColumn(colNum)) {
 

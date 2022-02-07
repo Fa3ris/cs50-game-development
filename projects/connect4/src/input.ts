@@ -3,7 +3,7 @@ let attachedElt: HTMLElement
 
 export const activeKeys: { [index: string]: boolean } = {};
 
-export const activeMouseButtons: number[] = []
+export const activeMouseButtons: boolean[] = []
 
 type MouseP = {
     x: number,
@@ -92,7 +92,7 @@ function onMouseUp(e: MouseEvent)
 {
     
     log('mouse up', e.offsetX, e.offsetY, 'button', e.button)
-    
+    activeMouseButtons[e.button] = false
 }
 
 
@@ -100,6 +100,7 @@ function onMouseDown(e: MouseEvent)
 {
     
     log('mouse down', e.offsetX, e.offsetY, 'button', e.button)
+    activeMouseButtons[e.button] = true
 
 }
 
