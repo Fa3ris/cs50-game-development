@@ -1,3 +1,5 @@
+import { tweenValue, ValueTween } from "./tween"
+
 let gridX0: number
 let gridY0: number
 
@@ -160,10 +162,22 @@ export function setGrid(
 
 const gridColor = 'blue'
 
-const slotColor = 'aqua'
+const slotColor = 'lightblue'
 
 export {slotColor as bgColor} 
 
+
+export function updateGrid(dt: number) {
+
+    if (dropTween) {
+        dropTween.update(dt)
+
+        if (dropTween.completed) {
+            console.log('unregister drop tween')
+            dropTween = undefined
+        }
+    }
+}
 
 export function drawGrid(ctx: CanvasRenderingContext2D) 
 {
@@ -183,7 +197,6 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
         ctx.save()
 
         ctx.translate(gridX0 - cellW, gridY0)
-        ctx.fillStyle = slotColor
         
         for (let j = 0; j < nRows; ++j) {
 
@@ -204,11 +217,17 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
                     const slot = coloredSlots[gridIndex(j, i)]
                     if (slot) {
                         ctx.fillStyle = slot.color
+                        ctx.arc(slotCenterX, slotCenterY, slotRadius,  0, 2 * Math.PI)
+                        ctx.fill()
                     } else {
-                        ctx.fillStyle = slotColor
+                        ctx.save()
+                            ctx.globalCompositeOperation = 'destination-out' // carve out empty slot from grid frame
+
+                            ctx.arc(slotCenterX, slotCenterY, slotRadius,  0, 2 * Math.PI)
+                            ctx.fill()
+                        ctx.restore()
                     }
-                    ctx.arc(slotCenterX, slotCenterY, slotRadius,  0, 2 * Math.PI)
-                    ctx.fill()
+                   
                 }
 
             ctx.restore()
@@ -225,7 +244,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
         }
         ctx.restore()
 
-        if (hoveredSlot) {
+        if (hoveredSlot && !dropTween) {
 
             if (coloredSlots[gridIndex(hoveredSlot.row, hoveredSlot.col)] == undefined) {
 
@@ -246,6 +265,22 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
 
             hoveredSlot = undefined
         }
+
+        if (dropTween) {
+            ctx.save()
+        
+                ctx.translate(gridX0 + columnOffset, gridY0 + 0 * cellH + dropTween.current)
+        
+                ctx.globalCompositeOperation = "destination-over"; // do not draw over what is already present
+                ctx.fillStyle = getColor();
+                ctx.beginPath()
+                ctx.arc(slotCenterX, slotCenterY, slotRadius,  0, 2 * Math.PI)
+                ctx.fill()
+
+            ctx.restore()
+
+        }
+        
 
     ctx.restore()
 }
@@ -291,16 +326,51 @@ function switchPlayer()
     }
 }
 
+let droppingSlot: boolean = false
+
+let dropTween: ValueTween | undefined
+let columnOffset: number
+
 export function addSlot(colNum: number) 
 {
     if (fillableColumn(colNum)) {
+        console.log(droppingSlot)
+        if (droppingSlot === true) {
+            console.warn('waiting for dropping to finish')
+            return
+        }
+
+        droppingSlot = true
 
         const row = nRows - 1 - columnHeights[colNum]
-        ++columnHeights[colNum]
-        coloredSlots[gridIndex(row, colNum)] = {
-            color: getColor()
+
+        columnOffset = colNum * cellW
+
+        let target = row * cellH
+
+        let duration = .2 * row
+
+        if (false) {
+            duration = 0
         }
-        switchPlayer()
+
+        dropTween = tweenValue({
+            from: 0,
+            to: target,
+            duration: duration,
+            complete: () => {
+                console.log('drop slop completed')
+                
+                ++columnHeights[colNum]
+                coloredSlots[gridIndex(row, colNum)] = {
+                    color: getColor()
+                }
+                switchPlayer()
+                droppingSlot = false
+            }
+
+        })
+        
     } else {
         console.error('invalid col num', colNum, columnHeights)
     }

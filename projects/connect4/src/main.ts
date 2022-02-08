@@ -1,7 +1,6 @@
 import { adjustCanvasForDisplay } from "~common/canvas-util";
 import { setDraw, setProcessInput, setUpdate, start } from "~common/loop";
-import { mouseMove } from "~projects/pong/src/game";
-import { bgColor, drawGrid, gridColumns, hoverColumn, Rect, setGrid } from "./grid";
+import { bgColor, drawGrid, gridColumns, hoverColumn, Rect, setGrid, updateGrid } from "./grid";
 import { attach, mouseP } from "./input";
 import { getCommands } from "./input-handler";
 
@@ -33,10 +32,9 @@ function main ()
     setUpdate(update)
     setProcessInput(processInput)
 
-    start()
-
     ctx.fillStyle = bgColor
 
+    start()
 }
 
 
@@ -65,13 +63,13 @@ function update(dt: number)
             break
         }
     }
+
+    updateGrid(dt)
 }
 
 const DEBUG = false
 function draw()
 {
-
-    ctx.fillRect(0, 0, W, H)
 
     drawGrid(ctx)
 
@@ -83,6 +81,11 @@ function draw()
             }
         ctx.restore()
     }
+
+    ctx.save()
+        ctx.globalCompositeOperation = "destination-over"; // fill over what is not drawn
+        ctx.fillRect(0, 0, W, H)
+    ctx.restore()
 }
 
 main()
