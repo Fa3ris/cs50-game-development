@@ -20,7 +20,8 @@ let gridFinalH: number
 const GRID = true
 
 type Slot = {
-    color: string
+    // color: string,
+    player: Player
 }
 
 const coloredSlots: Slot[] = []
@@ -171,11 +172,6 @@ export function updateGrid(dt: number) {
 
     if (dropTween) {
         dropTween.update(dt)
-
-        if (dropTween.completed) {
-            console.log('unregister drop tween')
-            dropTween = undefined
-        }
     }
 }
 
@@ -216,7 +212,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
             
                     const slot = coloredSlots[gridIndex(j, i)]
                     if (slot) {
-                        ctx.fillStyle = slot.color
+                        ctx.fillStyle = colorForPlayer(slot.player)
                         ctx.arc(slotCenterX, slotCenterY, slotRadius,  0, 2 * Math.PI)
                         ctx.fill()
                     } else {
@@ -316,6 +312,14 @@ function getColor(): string
     }
 }
 
+function colorForPlayer(player: Player): string {
+    if (player == Player.ONE) {
+        return 'red'
+    } else {
+        return 'gold'
+    }
+}
+
 function switchPlayer() 
 {
 
@@ -350,7 +354,7 @@ export function addSlot(colNum: number)
 
         let duration = .2 * row
 
-        if (false) {
+        if (true) {
             duration = 0
         }
 
@@ -363,10 +367,12 @@ export function addSlot(colNum: number)
                 
                 ++columnHeights[colNum]
                 coloredSlots[gridIndex(row, colNum)] = {
-                    color: getColor()
+                    player: currentPlayer
                 }
+                checkWin(coloredSlots, currentPlayer)
                 switchPlayer()
                 droppingSlot = false
+                dropTween = undefined
             }
 
         })
@@ -374,6 +380,62 @@ export function addSlot(colNum: number)
     } else {
         console.error('invalid col num', colNum, columnHeights)
     }
+}
+
+
+function checkWin(slots: Slot[], player: Player, winLength = 4): boolean {
+    
+    let count = 0
+    let current = 0
+    // check horizontal row
+    const lastPossibleCol = nCols - winLength
+    console.warn('last possible horizontal col', lastPossibleCol)
+    let res = false
+    for (let row = 0; row < nRows; ++row) {
+
+        console.group('check row', row)
+        while (current <= nCols - 1) {
+            const slot = slots[gridIndex(row , current)]
+            if (slot && slot.player === player) {
+                ++count
+                console.warn('inc count to', count)
+            } else {
+                console.warn('close count to', count)
+
+                if (count >= winLength) {
+                    res = true
+                    break
+                } else {
+                    count = 0
+                }
+            }
+            ++current
+
+            console.log('col is now', current)
+            if (current > lastPossibleCol && count == 0) {
+                console.error('break out of loop')
+                break
+            }
+        }
+
+        if (res == false && count >= winLength) {
+            console.warn('win after exit loop')
+            res = true
+        }
+
+        console.groupEnd()
+        if (res == true) {
+            break
+        }
+        count = 0
+        current = 0
+    }
+
+
+    if (res == true) {
+        console.warn(`%cplayer ${Player[player]} wins`, 'color:green; font-weight: bold; font-size: 18px')
+    }
+    return res
 }
 
 function fillableColumn(colNum: number): boolean 
