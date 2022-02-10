@@ -389,20 +389,27 @@ function checkWin(slots: Slot[], player: Player, winLength = 4): boolean {
     let current = 0
     // check horizontal row
     const lastPossibleCol = nCols - winLength
-    console.warn('last possible horizontal col', lastPossibleCol)
+    console.debug('last possible horizontal col', lastPossibleCol)
     let res = false
     for (let row = 0; row < nRows; ++row) {
 
-        console.group('check row', row)
+        false && console.group('check row', row)
         while (current <= nCols - 1) {
             const slot = slots[gridIndex(row , current)]
             if (slot && slot.player === player) {
                 ++count
-                console.warn('inc count to', count)
+                console.debug('inc count to', count)
             } else {
-                console.warn('close count to', count)
+                console.debug('close count to', count)
 
                 if (count >= winLength) {
+                    const winSlots: {row: number, col: number}[] = []
+                    let i = current - count
+                    const max = i + winLength
+                    for (; i < max; ++i ) {
+                        winSlots.push({row, col: i})
+                    }
+                    console.log('horizontal winning positions', winSlots)
                     res = true
                     break
                 } else {
@@ -411,19 +418,26 @@ function checkWin(slots: Slot[], player: Player, winLength = 4): boolean {
             }
             ++current
 
-            console.log('col is now', current)
+            console.debug('col is now', current)
             if (current > lastPossibleCol && count == 0) {
-                console.error('break out of loop')
+                console.debug('break out of loop')
                 break
             }
         }
 
         if (res == false && count >= winLength) {
-            console.warn('win after exit loop')
+            console.debug('win after exit loop')
+            const winSlots: {row: number, col: number}[] = []
+            let i = current - count
+            const max = i + winLength
+            for (; i < max; ++i ) {
+                winSlots.push({row, col: i})
+            }
+            console.log('horizontal winning positions', winSlots)
             res = true
         }
 
-        console.groupEnd()
+        false && console.groupEnd()
         if (res == true) {
             break
         }
