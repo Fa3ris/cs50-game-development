@@ -520,6 +520,97 @@ function checkWin(slots: Slot[], player: Player, winLength = 4): boolean {
         return res
     }
 
+
+    /* 
+        top-left to bottom-right diagonals 
+        
+        for a starting row, there must be at least (winlength -1) rows below to form a diagonal of length winLength
+
+        row = 0 .. nRows - winLength ?
+
+        for a starting col, there must be at least (winlength -1) cols to the right to form a diagonal of length winLength
+
+        col = 0 .. nCols - winLength ?
+    
+    */
+
+        const lastPossibleRowDiagDown =  nRows - winLength;
+        const lastPossibleColDiagDown = nCols - winLength;
+        for (let row = 0; row <= lastPossibleRowDiagDown; ++row) {
+
+            for (let col = 0; col <= lastPossibleColDiagDown; ++col) {
+
+                const slot1 = slots[gridIndex(row, col)]
+                const slot2 = slots[gridIndex(row + 1, col + 1)]
+                const slot3 = slots[gridIndex(row + 2, col + 2)]
+                const slot4 = slots[gridIndex(row + 3, col + 3)]
+
+                if (slot1 && slot2 && slot3 && slot4  && slot1.player === player
+                    && slot2.player === player
+                    && slot3.player === player
+                    && slot4.player === player) {
+
+                        console.log('diagonal top-left to bottom-right winning position starting at ', {row, col}, [slot1, slot2, slot3, slot4])
+                        res = true
+                        break
+                    }
+            }
+
+            if (res == true) { break }
+        }
+
+
+        if (res == true) {
+            console.warn(`%cplayer ${Player[player]} wins`, 'color:red; font-weight: bold; font-size: 18px')
+            return res
+        }
+    /* 
+        bottom-left to top-right diagonals
+
+        for a starting row, there must be at least (winlength -1) above below to form a diagonal of length winLength
+
+        row = nRows - 1 .. winLength ?
+
+        for a starting col, there must be at least (winlength -1) cols to the right to form a diagonal of length winLength
+
+        col = 0 .. nCols - winLength ?
+
+        
+    
+    
+    */
+
+        const lastPossibleRowDiagUp =  winLength - 1;
+        const lastPossibleColDiagUp =  nCols - winLength;
+
+        for (let row = nRows - 1; row >= lastPossibleRowDiagUp; --row) {
+
+            for (let col = 0; col <= lastPossibleColDiagUp; ++col) {
+
+                const slot1 = slots[gridIndex(row, col)]
+                const slot2 = slots[gridIndex(row - 1, col + 1)]
+                const slot3 = slots[gridIndex(row - 2, col + 2)]
+                const slot4 = slots[gridIndex(row - 3, col + 3)]
+
+                if (slot1 && slot2 && slot3 && slot4  && slot1.player === player
+                    && slot2.player === player
+                    && slot3.player === player
+                    && slot4.player === player) {
+
+                        res = true
+                        console.log('diagonal bottom-left to top-right winning position starting at ', {row, col}, [slot1, slot2, slot3, slot4])
+                        break
+                    }
+            }
+
+            if (res == true) { break }
+        }
+
+        if (res == true) {
+            console.warn(`%cplayer ${Player[player]} wins`, 'color:red; font-weight: bold; font-size: 18px')
+            return res
+        }
+
     return res
 }
 
