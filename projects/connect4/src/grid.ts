@@ -251,7 +251,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
             
                 ctx.save()
         
-                    ctx.globalAlpha = .8
+                    ctx.globalAlpha = .5
                     ctx.translate(gridX0 + hoveredSlot.col * cellW, gridY0 + hoveredSlot.row * cellH)
             
                     ctx.fillStyle = hoveredSlot.color;
