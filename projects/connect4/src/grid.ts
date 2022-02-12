@@ -26,14 +26,18 @@ type Slot = {
 
 const coloredSlots: Slot[] = []
 
+/**
+ * number of slots filled for each column
+ * must be < nRows to be a playable column
+ */
 let columnHeights: number[]
 
-enum Player {
+export enum Player {
     ONE,
     TWO
 }
 
-let currentPlayer: Player = Player.ONE
+export let currentPlayer: Player = Player.ONE
 
 type HoveredSlot = {
     row: number
@@ -240,7 +244,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D)
         }
         ctx.restore()
 
-        if (hoveredSlot && !dropTween) {
+        if (gameState == GameState.PLAY && hoveredSlot && !dropTween) {
 
             if (coloredSlots[gridIndex(hoveredSlot.row, hoveredSlot.col)] == undefined) {
 
@@ -337,6 +341,10 @@ let columnOffset: number
 
 export function addSlot(colNum: number) 
 {
+    if (gameState != GameState.PLAY) {
+        console.warn('not in play state')
+        return
+    }
     if (fillableColumn(colNum)) {
         console.log(droppingSlot)
         if (droppingSlot === true) {
@@ -369,10 +377,18 @@ export function addSlot(colNum: number)
                 coloredSlots[gridIndex(row, colNum)] = {
                     player: currentPlayer
                 }
-                checkWin(coloredSlots, currentPlayer)
-                switchPlayer()
                 droppingSlot = false
                 dropTween = undefined
+                if (checkWin(coloredSlots, currentPlayer)) {
+                    gameState = GameState.WIN
+                    winner = currentPlayer
+                    console.log(Player[currentPlayer], 'wins')
+                } else if (isFullGrid()) {
+                    gameState = GameState.DRAW  
+                    console.log("it's a draw")
+                } else {
+                    switchPlayer()
+                }
             }
 
         })
@@ -381,6 +397,20 @@ export function addSlot(colNum: number)
         console.error('invalid col num', colNum, columnHeights)
     }
 }
+
+
+export let winner: Player | undefined = undefined
+
+export enum GameState {
+    PLAY,
+    WIN,
+    DRAW
+}
+
+
+export let gameState = GameState.PLAY
+
+
 
 
 function checkWin(slots: Slot[], player: Player, winLength = 4): boolean {
@@ -615,6 +645,21 @@ function checkWin(slots: Slot[], player: Player, winLength = 4): boolean {
 function fillableColumn(colNum: number): boolean 
 {
     return colNum >= 0 && colNum <= nCols && columnHeights[colNum] < nRows
+}
+
+
+function isFullGrid(): boolean {
+    let res = true
+
+    for (let col = 0 ; col < nCols; ++col) {
+
+        if (columnHeights[col] < nRows) {
+            res = false
+            break
+        }
+    }
+
+    return res;
 }
 
 
